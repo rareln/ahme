@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw } from "lucide-react";
+import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2 } from "lucide-react";
 import { useEditorContext } from "./EditorContext";
 
 interface Message {
@@ -11,6 +11,17 @@ interface Message {
 
 interface AiPanelProps {
     editorContent: string;
+}
+
+/** 添付ファイル */
+interface AttachedFile {
+    id: string;
+    name: string;
+    text: string;
+    size: number;
+    isParsing: boolean;
+    error?: string;
+    truncated?: boolean;
 }
 
 /** Markdown コードブロックとテキストをパースする */
@@ -83,8 +94,8 @@ function CodeBlockWithInsert({
                 <button
                     onClick={handleInsert}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 ${inserted
-                            ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                            : "bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 hover:shadow-[0_0_8px_rgba(59,130,246,0.15)]"
+                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                        : "bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 hover:shadow-[0_0_8px_rgba(59,130,246,0.15)]"
                         }`}
                     title="エディタのカーソル位置に挿入（ハイライト付き）"
                 >
@@ -152,7 +163,6 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     const buttonRef = useRef<HTMLDivElement>(null);
 
     const handleMouseUp = useCallback(() => {
-        // 少し遅延して選択が確定するのを待つ
         setTimeout(() => {
             const sel = window.getSelection();
             const text = sel?.toString()?.trim();
@@ -161,7 +171,6 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
                 return;
             }
 
-            // 選択がチャットエリア内かどうかを確認
             const container = containerRef.current;
             if (!container || !sel?.anchorNode) {
                 setVisible(false);
@@ -172,17 +181,13 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
                 return;
             }
 
-            // ボタンの位置を選択範囲の末尾に配置
             const range = sel.getRangeAt(0);
             const rect = range.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
 
             setSelectedText(text);
             setPosition({
-                x: Math.min(
-                    rect.right - containerRect.left,
-                    containerRect.width - 140
-                ),
+                x: Math.min(rect.right - containerRect.left, containerRect.width - 140),
                 y: rect.bottom - containerRect.top + 4,
             });
             setVisible(true);
@@ -190,7 +195,6 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     }, [containerRef]);
 
     const handleMouseDown = useCallback((e: MouseEvent) => {
-        // ボタン自体のクリックは無視
         if (buttonRef.current?.contains(e.target as Node)) return;
         setVisible(false);
     }, []);
@@ -198,10 +202,8 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
-
         container.addEventListener("mouseup", handleMouseUp);
         document.addEventListener("mousedown", handleMouseDown);
-
         return () => {
             container.removeEventListener("mouseup", handleMouseUp);
             document.removeEventListener("mousedown", handleMouseDown);
@@ -219,26 +221,72 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     if (!visible) return null;
 
     return (
-        <div
-            ref={buttonRef}
-            className="absolute z-50"
-            style={{ left: position.x, top: position.y }}
-        >
+        <div ref={buttonRef} className="absolute z-50" style={{ left: position.x, top: position.y }}>
             <button
                 onClick={handleInsert}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold
                            bg-emerald-500/15 text-emerald-400 border border-emerald-500/30
                            hover:bg-emerald-500/25 hover:border-emerald-500/50
                            hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]
-                           backdrop-filter backdrop-blur-sm
-                           transition-all duration-200
-                           animate-in fade-in slide-in-from-bottom-1"
-                style={{
-                    animation: "ai-widget-in 0.15s ease-out",
-                }}
+                           backdrop-filter backdrop-blur-sm transition-all duration-200"
+                style={{ animation: "ai-widget-in 0.15s ease-out" }}
                 title="選択テキストをエディタのカーソル位置に挿入"
             >
                 <span>📝</span> エディタに挿入
+            </button>
+        </div>
+    );
+}
+
+/** ファイルサイズのフォーマット */
+function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** 添付ファイルチップ */
+function AttachmentChip({
+    file,
+    onRemove,
+}: {
+    file: AttachedFile;
+    onRemove: (id: string) => void;
+}) {
+    return (
+        <div
+            className={`flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-md text-[11px] border transition-all duration-200 ${file.error
+                ? "bg-red-900/20 border-red-700/40 text-red-400"
+                : file.isParsing
+                    ? "bg-blue-900/20 border-blue-700/40 text-blue-400"
+                    : file.truncated
+                        ? "bg-amber-900/20 border-amber-700/40 text-amber-400"
+                        : "bg-gray-800/80 border-gray-600/40 text-gray-300"
+                }`}
+        >
+            {file.isParsing ? (
+                <Loader2 size={12} className="animate-spin shrink-0" />
+            ) : (
+                <FileText size={12} className="shrink-0" />
+            )}
+            <span className="truncate max-w-[120px] font-medium" title={file.name}>
+                {file.name}
+            </span>
+            <span className="text-[9px] opacity-60 whitespace-nowrap">
+                {formatFileSize(file.size)}
+            </span>
+            {file.truncated && (
+                <span className="text-[9px] text-amber-500" title="テキストが切り詰められました">⚠</span>
+            )}
+            {file.error && (
+                <span className="text-[9px] text-red-400" title={file.error}>⚠</span>
+            )}
+            <button
+                onClick={() => onRemove(file.id)}
+                className="p-0.5 rounded hover:bg-gray-600/50 transition-colors shrink-0"
+                title="添付を取り消し"
+            >
+                <X size={12} />
             </button>
         </div>
     );
@@ -255,6 +303,11 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     const [error, setError] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+
+    // ── 添付ファイル State ──
+    const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+    const [isDragOver, setIsDragOver] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchModels = async () => {
         setIsLoadingModels(true);
@@ -302,13 +355,125 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         }
     }, [messages]);
 
+    // ── ファイル添付処理 ──
+    const handleFiles = useCallback(async (files: FileList | File[]) => {
+        const fileArray = Array.from(files);
+
+        for (const file of fileArray) {
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const newFile: AttachedFile = {
+                id,
+                name: file.name,
+                text: "",
+                size: file.size,
+                isParsing: true,
+            };
+
+            setAttachedFiles(prev => [...prev, newFile]);
+
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const res = await fetch("/api/parse", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    setAttachedFiles(prev =>
+                        prev.map(f =>
+                            f.id === id
+                                ? { ...f, isParsing: false, error: data.error || "解析失敗" }
+                                : f
+                        )
+                    );
+                    continue;
+                }
+
+                setAttachedFiles(prev =>
+                    prev.map(f =>
+                        f.id === id
+                            ? {
+                                ...f,
+                                isParsing: false,
+                                text: data.text,
+                                truncated: data.truncated,
+                            }
+                            : f
+                    )
+                );
+            } catch (err: any) {
+                setAttachedFiles(prev =>
+                    prev.map(f =>
+                        f.id === id
+                            ? { ...f, isParsing: false, error: err.message }
+                            : f
+                    )
+                );
+            }
+        }
+    }, []);
+
+    const removeFile = useCallback((id: string) => {
+        setAttachedFiles(prev => prev.filter(f => f.id !== id));
+    }, []);
+
+    // ── Drag & Drop ハンドラ ──
+    const handleDragOver = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    }, []);
+
+    const handleDragLeave = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 子要素からのleaveイベントを無視
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const { clientX, clientY } = e;
+        if (
+            clientX >= rect.left &&
+            clientX <= rect.right &&
+            clientY >= rect.top &&
+            clientY <= rect.bottom
+        ) {
+            return;
+        }
+        setIsDragOver(false);
+    }, []);
+
+    const handleDrop = useCallback((e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFiles(files);
+        }
+    }, [handleFiles]);
+
+    // ── メッセージ送信 ──
     const handleSend = async () => {
         if (!inputValue.trim() || isGenerating) return;
+        // パース中のファイルがある場合は待機
+        if (attachedFiles.some(f => f.isParsing)) return;
 
         const userText = inputValue;
+        const currentAttachments = attachedFiles.filter(f => !f.error && f.text);
+        console.log(`[AiPanel] handleSend: ${currentAttachments.length} attachments, files:`, currentAttachments.map(f => `${f.name}(${f.text.length}chars)`));
+
         const newMessages: Message[] = [
             ...messages,
-            { role: "user", content: userText },
+            {
+                role: "user",
+                content: currentAttachments.length > 0
+                    ? `${userText}\n\n📎 添付: ${currentAttachments.map(f => f.name).join(", ")}`
+                    : userText,
+            },
         ];
 
         setMessages(newMessages);
@@ -320,7 +485,20 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
 
         try {
             const systemPrompt = "あなたはAHMEというエディタのAIアシスタントです。回答は必ず「日本語」で行ってください。絶対に英語を使わないでください。親しみやすく、丁寧な敬語を使ってください。";
-            const fullContext = `以下のドキュメントの内容に基づいて回答してください。\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
+
+            // 添付ファイルのコンテキスト構築
+            let attachmentContext = "";
+            if (currentAttachments.length > 0) {
+                attachmentContext = currentAttachments
+                    .map(f => `[添付資料: ${f.name}]\n${f.text}`)
+                    .join("\n\n");
+                attachmentContext = `\n\n--- 添付資料 ---\n${attachmentContext}\n`;
+            }
+
+            const fullContext = `以下のドキュメントの内容に基づいて回答してください。${attachmentContext}\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
+
+            console.log(`[AiPanel] fullContext length: ${fullContext.length}`);
+            console.log(`[AiPanel] attachmentContext: ${attachmentContext ? attachmentContext.substring(0, 200) + '...' : '(none)'}`);
 
             const payload = {
                 model: selectedModel || "llama3",
@@ -369,6 +547,9 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                     return next;
                 });
             }
+
+            // 送信成功後に添付をクリア
+            setAttachedFiles([]);
         } catch (err: any) {
             if (err.name === "AbortError") {
                 console.log("Stream aborted");
@@ -388,7 +569,11 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         }
         setMessages([]);
         setError(null);
+        setAttachedFiles([]);
     };
+
+    const hasParsing = attachedFiles.some(f => f.isParsing);
+    const successFiles = attachedFiles.filter(f => !f.error && !f.isParsing);
 
     return (
         <div className="flex flex-col h-full bg-[#111827] border-l border-gray-700 text-sm">
@@ -444,6 +629,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                             <Bot size={48} strokeWidth={1} />
                             <p>エディタの内容について質問してみましょう</p>
                             <p className="text-[11px] text-gray-600">💡 回答のテキストを選択すると「エディタに挿入」ボタンが表示されます</p>
+                            <p className="text-[11px] text-gray-600">📎 ファイルをドラッグ＆ドロップで添付できます</p>
                         </div>
                     ) : (
                         messages.filter(m => m.role !== "system").map((msg, i) => (
@@ -489,12 +675,40 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                     )}
                 </div>
 
-                {/* テキスト選択時のフローティング挿入ボタン */}
                 <SelectionInsertButton containerRef={scrollRef} />
             </div>
 
-            {/* 入力エリア */}
-            <div className="p-4 border-t border-gray-700 bg-gray-900/50">
+            {/* ── 入力エリア（Dropzone 対応）── */}
+            <div
+                className={`p-4 border-t transition-all duration-200 ${isDragOver
+                    ? "border-blue-500 bg-blue-900/20 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]"
+                    : "border-gray-700 bg-gray-900/50"
+                    }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+            >
+                {/* ドラッグオーバーレイ */}
+                {isDragOver && (
+                    <div className="mb-3 flex items-center justify-center gap-2 py-4 rounded-lg border-2 border-dashed border-blue-500/50 bg-blue-500/5 text-blue-400 text-xs font-medium">
+                        <Paperclip size={16} />
+                        ファイルをここにドロップ (.txt, .md, .pdf, ...)
+                    </div>
+                )}
+
+                {/* 添付ファイルチップ */}
+                {attachedFiles.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1.5">
+                        {attachedFiles.map(file => (
+                            <AttachmentChip
+                                key={file.id}
+                                file={file}
+                                onRemove={removeFile}
+                            />
+                        ))}
+                    </div>
+                )}
+
                 <div className="relative flex flex-col gap-2">
                     <textarea
                         value={inputValue}
@@ -505,29 +719,67 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                                 handleSend();
                             }
                         }}
-                        placeholder={isGenerating ? "生成中..." : "AIに質問する (Shift+Enterで送信)"}
+                        placeholder={
+                            isGenerating
+                                ? "生成中..."
+                                : hasParsing
+                                    ? "ファイル解析中..."
+                                    : "AIに質問する (Shift+Enter送信 / ファイルD&D対応)"
+                        }
                         disabled={isGenerating}
                         style={{ fontSize: `${fontSize}px` }}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pr-12 text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none min-h-[80px] disabled:opacity-50"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pr-20 text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none min-h-[80px] disabled:opacity-50"
                     />
-                    <button
-                        onClick={handleSend}
-                        disabled={!inputValue.trim() || isGenerating}
-                        className={`absolute bottom-3 right-3 p-2 rounded-md transition-all ${inputValue.trim() && !isGenerating
+                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                        {/* 📎 ファイル添付ボタン */}
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isGenerating}
+                            className="p-2 rounded-md text-gray-400 hover:text-blue-400 hover:bg-gray-700/50 transition-all"
+                            title="ファイルを添付 (.txt, .md, .pdf, ...)"
+                        >
+                            <Paperclip size={16} />
+                        </button>
+                        {/* 送信ボタン */}
+                        <button
+                            onClick={handleSend}
+                            disabled={!inputValue.trim() || isGenerating || hasParsing}
+                            className={`p-2 rounded-md transition-all ${inputValue.trim() && !isGenerating && !hasParsing
                                 ? "bg-blue-600 hover:bg-blue-500 text-white"
                                 : "bg-gray-700 text-gray-500 cursor-not-allowed"
-                            }`}
-                    >
-                        {isGenerating ? (
-                            <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <Send size={18} />
-                        )}
-                    </button>
+                                }`}
+                        >
+                            {isGenerating ? (
+                                <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <Send size={18} />
+                            )}
+                        </button>
+                    </div>
+                    {/* 隠しファイル入力 */}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept=".txt,.md,.csv,.json,.log,.xml,.yaml,.yml,.toml,.ini,.pdf,.js,.ts,.tsx,.jsx,.py,.rs,.html,.css,.scss,.sh,.bash"
+                        className="hidden"
+                        onChange={(e) => {
+                            if (e.target.files) {
+                                handleFiles(e.target.files);
+                                e.target.value = ""; // リセット
+                            }
+                        }}
+                    />
                 </div>
+
                 <div className="mt-2 text-[10px] text-gray-500 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
                     <span className={`w-1 h-1 rounded-full animate-pulse ${error ? "bg-red-500" : "bg-green-500"}`} />
                     AHME Context-Aware AI
+                    {successFiles.length > 0 && (
+                        <span className="normal-case tracking-normal text-blue-400/70">
+                            · {successFiles.length}件の添付
+                        </span>
+                    )}
                 </div>
             </div>
         </div>
