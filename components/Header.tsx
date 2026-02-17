@@ -9,6 +9,8 @@ interface HeaderProps {
   onSearch: () => void;
   onReplace: () => void;
   onSettings: () => void;
+  fontSize: number;
+  onFontSizeChange: (size: number) => void;
   aiEnabled: boolean;
   onToggleAi: () => void;
 }
@@ -21,6 +23,8 @@ export default function Header({
   onSearch,
   onReplace,
   onSettings,
+  fontSize,
+  onFontSizeChange,
   aiEnabled,
   onToggleAi,
 }: HeaderProps) {
@@ -36,6 +40,24 @@ export default function Header({
         <MenuButton icon="🔄" label="置換" onClick={onReplace} />
         <div className="w-px h-6 bg-gray-600 mx-1" />
         <MenuButton icon="⚙️" label="設定" onClick={onSettings} />
+        <div className="w-px h-6 bg-gray-600 mx-1" />
+        <div className="flex items-center gap-0.5 text-sm">
+          <button
+            onClick={() => onFontSizeChange(Math.max(10, fontSize - 1))}
+            className="px-1.5 py-1 rounded hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+            title="文字を小さく"
+          >
+            −
+          </button>
+          <span className="text-xs text-gray-400 w-6 text-center select-none tabular-nums">{fontSize}</span>
+          <button
+            onClick={() => onFontSizeChange(Math.min(32, fontSize + 1))}
+            className="px-1.5 py-1 rounded hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+            title="文字を大きく"
+          >
+            ＋
+          </button>
+        </div>
       </div>
 
       {/* 右: AI連携トグル */}

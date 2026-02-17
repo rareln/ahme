@@ -7,6 +7,12 @@ import MemoEditor from "@/components/Editor";
 import StatusBar from "@/components/StatusBar";
 import SettingsDialog, { AppSettings, DEFAULT_SETTINGS } from "@/components/SettingsDialog";
 import SaveConfirmDialog from "@/components/SaveConfirmDialog";
+import {
+  Group as PanelGroup,
+  Panel,
+  Separator as PanelResizeHandle,
+} from "react-resizable-panels";
+import AiPanel from "@/components/AiPanel";
 
 /** ユニークID生成 */
 function generateId(): string {
@@ -381,6 +387,8 @@ export default function Home() {
         onSearch={handleSearch}
         onReplace={handleReplace}
         onSettings={() => setSettingsOpen(true)}
+        fontSize={settings.fontSize}
+        onFontSizeChange={(size) => setSettings(prev => ({ ...prev, fontSize: size }))}
         aiEnabled={aiEnabled}
         onToggleAi={() => setAiEnabled(!aiEnabled)}
       />
@@ -394,20 +402,40 @@ export default function Home() {
         onCloseTab={handleCloseTab}
       />
 
-      {/* エディタ本体 */}
-      <main className="flex-1 overflow-hidden">
-        {activeTab && (
-          <MemoEditor
-            key={activeTab.id}
-            defaultValue={activeTab.content}
-            language={activeTab.language}
-            settings={settings}
-            onChange={handleContentChange}
-            onCursorChange={handleCursorChange}
-            showSearch={searchTrigger}
-            showReplace={replaceTrigger}
-          />
-        )}
+      {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}
+      <main className="flex-1 overflow-hidden relative">
+        <PanelGroup orientation="horizontal" id="main-layout">
+          <Panel defaultSize="65" minSize="20" id="editor-panel">
+            <div className="h-full w-full">
+              {activeTab && (
+                <MemoEditor
+                  key={activeTab.id}
+                  defaultValue={activeTab.content}
+                  language={activeTab.language}
+                  settings={settings}
+                  onChange={handleContentChange}
+                  onCursorChange={handleCursorChange}
+                  showSearch={searchTrigger}
+                  showReplace={replaceTrigger}
+                />
+              )}
+            </div>
+          </Panel>
+
+          {aiEnabled && (
+            <>
+              <PanelResizeHandle
+                id="main-resizer"
+                className="w-1.5 bg-gray-800 hover:bg-blue-600 transition-colors cursor-col-resize flex items-center justify-center"
+              >
+                <div className="h-8 w-px bg-gray-600" />
+              </PanelResizeHandle>
+              <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
+                <AiPanel editorContent={activeTab?.content || ""} />
+              </Panel>
+            </>
+          )}
+        </PanelGroup>
       </main>
 
       {/* ステータスバー */}
