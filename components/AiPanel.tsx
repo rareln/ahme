@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2 } from "lucide-react";
+import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2, Globe, Image as ImageIcon } from "lucide-react";
 import { useEditorContext } from "./EditorContext";
 
 interface Message {
@@ -22,6 +22,56 @@ interface AttachedFile {
     isParsing: boolean;
     error?: string;
     truncated?: boolean;
+}
+
+/** 添付画像 */
+interface AttachedImage {
+    id: string;
+    name: string;
+    base64: string;   // Ollama に送る純粋な Base64（data: prefix なし）
+    preview: string;  // プレビュー用 data URL
+    size: number;
+}
+
+/** 画像を Canvas でリサイズし Base64 を返す（長辺1024px） */
+function resizeImageToBase64(file: File, maxEdge = 1024): Promise<{ base64: string; preview: string }> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new window.Image();
+            img.onload = () => {
+                let { width, height } = img;
+                if (width > maxEdge || height > maxEdge) {
+                    const ratio = Math.min(maxEdge / width, maxEdge / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d")!;
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+                // data:image/jpeg;base64,XXXX → split で確実にプレフィックス除去
+                const parts = dataUrl.split(",");
+                const base64 = parts.length > 1 ? parts.slice(1).join(",") : parts[0];
+                console.log(`[AiPanel] Image resized: ${width}x${height}, base64 length: ${base64.length}, starts with: ${base64.substring(0, 20)}`);
+                resolve({ base64, preview: dataUrl });
+            };
+            img.onerror = reject;
+            img.src = reader.result as string;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"]);
+
+function isImageFile(file: File): boolean {
+    if (file.type.startsWith("image/")) return true;
+    const ext = file.name.lastIndexOf(".") >= 0 ? file.name.slice(file.name.lastIndexOf(".")).toLowerCase() : "";
+    return IMAGE_EXTENSIONS.has(ext);
 }
 
 /** Markdown コードブロックとテキストをパースする */
@@ -309,6 +359,13 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     const [isDragOver, setIsDragOver] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // ── 画像添付 State ──
+    const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
+
+    // ── Web検索 State ──
+    const [webSearchEnabled, setWebSearchEnabled] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
+
     const fetchModels = async () => {
         setIsLoadingModels(true);
         setError(null);
@@ -355,11 +412,31 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         }
     }, [messages]);
 
-    // ── ファイル添付処理 ──
+    // ── ファイル添付処理（画像 / テキスト分岐）──
     const handleFiles = useCallback(async (files: FileList | File[]) => {
         const fileArray = Array.from(files);
 
         for (const file of fileArray) {
+            // ── 画像ファイル: クライアントサイドで Base64 変換 ──
+            if (isImageFile(file)) {
+                const id = `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                try {
+                    const { base64, preview } = await resizeImageToBase64(file);
+                    setAttachedImages(prev => [...prev, {
+                        id,
+                        name: file.name,
+                        base64,
+                        preview,
+                        size: file.size,
+                    }]);
+                    console.log(`[AiPanel] Image attached: ${file.name} (resized for Ollama)`);
+                } catch (err: any) {
+                    console.error(`[AiPanel] Image resize failed: ${err.message}`);
+                }
+                continue;
+            }
+
+            // ── テキスト / PDF ファイル: サーバーサイドパース ──
             const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             const newFile: AttachedFile = {
                 id,
@@ -421,6 +498,10 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         setAttachedFiles(prev => prev.filter(f => f.id !== id));
     }, []);
 
+    const removeImage = useCallback((id: string) => {
+        setAttachedImages(prev => prev.filter(img => img.id !== id));
+    }, []);
+
     // ── Drag & Drop ハンドラ ──
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -464,14 +545,20 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
 
         const userText = inputValue;
         const currentAttachments = attachedFiles.filter(f => !f.error && f.text);
-        console.log(`[AiPanel] handleSend: ${currentAttachments.length} attachments, files:`, currentAttachments.map(f => `${f.name}(${f.text.length}chars)`));
+        const currentImages = [...attachedImages];
+        console.log(`[AiPanel] handleSend: ${currentAttachments.length} files, ${currentImages.length} images`);
+
+        // ユーザーメッセージに添付情報を表示
+        const attachInfo: string[] = [];
+        if (currentAttachments.length > 0) attachInfo.push(`📎 ${currentAttachments.map(f => f.name).join(", ")}`);
+        if (currentImages.length > 0) attachInfo.push(`🖼️ ${currentImages.map(img => img.name).join(", ")}`);
 
         const newMessages: Message[] = [
             ...messages,
             {
                 role: "user",
-                content: currentAttachments.length > 0
-                    ? `${userText}\n\n📎 添付: ${currentAttachments.map(f => f.name).join(", ")}`
+                content: attachInfo.length > 0
+                    ? `${userText}\n\n${attachInfo.join(" | ")}`
                     : userText,
             },
         ];
@@ -486,7 +573,35 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         try {
             const systemPrompt = "あなたはAHMEというエディタのAIアシスタントです。回答は必ず「日本語」で行ってください。絶対に英語を使わないでください。親しみやすく、丁寧な敬語を使ってください。";
 
-            // 添付ファイルのコンテキスト構築
+            // ── Web検索（有効時のみ、3秒タイムアウト） ──
+            let searchContext = "";
+            if (webSearchEnabled) {
+                setIsSearching(true);
+                try {
+                    const searchRes = await fetch("/api/search", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ query: userText }),
+                    });
+                    const searchData = await searchRes.json();
+
+                    if (!searchData.skipped && searchData.results?.length > 0) {
+                        const resultsText = searchData.results
+                            .map((r: any, i: number) => `${i + 1}. [${r.title}](${r.url})\n${r.content}`)
+                            .join("\n\n");
+                        searchContext = `\n\n--- Web検索結果 ---\n${searchData.answer ? `要約: ${searchData.answer}\n\n` : ""}${resultsText}\n`;
+                        console.log(`[AiPanel] Web search: ${searchData.results.length} results`);
+                    } else {
+                        console.log(`[AiPanel] Web search skipped: ${searchData.reason || "no results"}`);
+                    }
+                } catch (searchErr: any) {
+                    console.log(`[AiPanel] Web search error (skipping): ${searchErr.message}`);
+                } finally {
+                    setIsSearching(false);
+                }
+            }
+
+            // ── 添付ファイルのコンテキスト構築 ──
             let attachmentContext = "";
             if (currentAttachments.length > 0) {
                 attachmentContext = currentAttachments
@@ -495,12 +610,32 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                 attachmentContext = `\n\n--- 添付資料 ---\n${attachmentContext}\n`;
             }
 
-            const fullContext = `以下のドキュメントの内容に基づいて回答してください。${attachmentContext}\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
+            // ── プロンプト構築（画像の有無でストラテジーを変更） ──
+            let fullContext: string;
 
-            console.log(`[AiPanel] fullContext length: ${fullContext.length}`);
-            console.log(`[AiPanel] attachmentContext: ${attachmentContext ? attachmentContext.substring(0, 200) + '...' : '(none)'}`);
+            if (currentImages.length > 0) {
+                // 🖼️ 画像あり: 画像分析を最優先、エディタコンテキストは要約程度に抑える
+                // 長文ドキュメントがコンテキストウィンドウを圧迫すると画像が無視されるため
+                const MAX_EDITOR_WITH_IMAGE = 1000;
+                const trimmedEditor = editorContent.length > MAX_EDITOR_WITH_IMAGE
+                    ? editorContent.substring(0, MAX_EDITOR_WITH_IMAGE) + "\n...(以下省略)..."
+                    : editorContent;
 
-            const payload = {
+                fullContext = [
+                    "【重要】画像が添付されています。まず画像の内容を詳しく分析し、ユーザーの質問に回答してください。",
+                    `\n--- User Question ---\n${userText}`,
+                    searchContext,
+                    attachmentContext,
+                    trimmedEditor ? `\n--- エディタ参考情報（要約） ---\n${trimmedEditor}` : "",
+                ].filter(Boolean).join("\n");
+            } else {
+                // 📝 テキストのみ: 従来どおりフルコンテキスト
+                fullContext = `以下のドキュメントの内容に基づいて回答してください。${searchContext}${attachmentContext}\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
+            }
+
+            console.log(`[AiPanel] fullContext length: ${fullContext.length}, hasImages: ${currentImages.length > 0}`);
+
+            const payload: any = {
                 model: selectedModel || "llama3",
                 messages: [
                     { role: "system", content: systemPrompt },
@@ -509,6 +644,20 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                 ],
                 stream: true,
             };
+
+            // 画像がある場合、Base64 配列を payload に追加
+            if (currentImages.length > 0) {
+                // 純粋な Base64 文字列のみを抽出（data: プレフィックスを再度確認・除去）
+                const cleanBase64 = currentImages.map(img => {
+                    let b64 = img.base64;
+                    if (b64.startsWith("data:")) {
+                        b64 = b64.split(",").slice(1).join(",");
+                    }
+                    return b64;
+                });
+                payload.images = cleanBase64;
+                console.log(`[AiPanel] Sending ${cleanBase64.length} image(s), base64 lengths: ${cleanBase64.map(b => b.length)}, first50: ${cleanBase64.map(b => b.substring(0, 50))}`);
+            }
 
             const response = await fetch("/api/chat", {
                 method: "POST",
@@ -550,6 +699,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
 
             // 送信成功後に添付をクリア
             setAttachedFiles([]);
+            setAttachedImages([]);
         } catch (err: any) {
             if (err.name === "AbortError") {
                 console.log("Stream aborted");
@@ -570,10 +720,12 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         setMessages([]);
         setError(null);
         setAttachedFiles([]);
+        setAttachedImages([]);
     };
 
     const hasParsing = attachedFiles.some(f => f.isParsing);
     const successFiles = attachedFiles.filter(f => !f.error && !f.isParsing);
+    const totalAttachments = successFiles.length + attachedImages.length;
 
     return (
         <div className="flex flex-col h-full bg-[#111827] border-l border-gray-700 text-sm">
@@ -612,6 +764,17 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                             <RefreshCw size={14} />
                         </button>
                     </div>
+                    {/* 🌐 Web検索トグル */}
+                    <button
+                        onClick={() => setWebSearchEnabled(v => !v)}
+                        className={`p-1.5 rounded transition-all duration-200 ${webSearchEnabled
+                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_6px_rgba(16,185,129,0.15)]"
+                            : "text-gray-500 hover:text-gray-300 hover:bg-gray-700"
+                            }`}
+                        title={webSearchEnabled ? "Web検索: ON" : "Web検索: OFF"}
+                    >
+                        <Globe size={15} />
+                    </button>
                     <button onClick={handleClear} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400 transition-colors" title="履歴をクリア">
                         <Trash2 size={16} />
                     </button>
@@ -692,12 +855,20 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                 {isDragOver && (
                     <div className="mb-3 flex items-center justify-center gap-2 py-4 rounded-lg border-2 border-dashed border-blue-500/50 bg-blue-500/5 text-blue-400 text-xs font-medium">
                         <Paperclip size={16} />
-                        ファイルをここにドロップ (.txt, .md, .pdf, ...)
+                        ファイルをここにドロップ (.txt, .md, .pdf, 画像 ...)
                     </div>
                 )}
 
-                {/* 添付ファイルチップ */}
-                {attachedFiles.length > 0 && (
+                {/* 検索中インジケーター */}
+                {isSearching && (
+                    <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-900/20 border border-emerald-700/30 text-emerald-400 text-[11px]">
+                        <Loader2 size={12} className="animate-spin" />
+                        Web検索中...
+                    </div>
+                )}
+
+                {/* 添付ファイルチップ + 画像プレビュー */}
+                {(attachedFiles.length > 0 || attachedImages.length > 0) && (
                     <div className="mb-2 flex flex-wrap gap-1.5">
                         {attachedFiles.map(file => (
                             <AttachmentChip
@@ -705,6 +876,31 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                                 file={file}
                                 onRemove={removeFile}
                             />
+                        ))}
+                        {attachedImages.map(img => (
+                            <div
+                                key={img.id}
+                                className="relative group flex items-center gap-1.5 pl-1 pr-1 py-1 rounded-md text-[11px] border bg-violet-900/20 border-violet-700/40 text-violet-300"
+                            >
+                                <img
+                                    src={img.preview}
+                                    alt={img.name}
+                                    className="w-8 h-8 rounded object-cover border border-violet-600/30"
+                                />
+                                <span className="truncate max-w-[100px] font-medium" title={img.name}>
+                                    {img.name}
+                                </span>
+                                <span className="text-[9px] opacity-60 whitespace-nowrap">
+                                    {formatFileSize(img.size)}
+                                </span>
+                                <button
+                                    onClick={() => removeImage(img.id)}
+                                    className="p-0.5 rounded hover:bg-gray-600/50 transition-colors shrink-0"
+                                    title="画像を取り消し"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
                         ))}
                     </div>
                 )}
@@ -724,7 +920,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                                 ? "生成中..."
                                 : hasParsing
                                     ? "ファイル解析中..."
-                                    : "AIに質問する (Shift+Enter送信 / ファイルD&D対応)"
+                                    : "AIに質問する (Shift+Enter送信 / ファイル・画像D&D対応)"
                         }
                         disabled={isGenerating}
                         style={{ fontSize: `${fontSize}px` }}
@@ -761,7 +957,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                         ref={fileInputRef}
                         type="file"
                         multiple
-                        accept=".txt,.md,.csv,.json,.log,.xml,.yaml,.yml,.toml,.ini,.pdf,.js,.ts,.tsx,.jsx,.py,.rs,.html,.css,.scss,.sh,.bash"
+                        accept=".txt,.md,.csv,.json,.log,.xml,.yaml,.yml,.toml,.ini,.pdf,.js,.ts,.tsx,.jsx,.py,.rs,.html,.css,.scss,.sh,.bash,.jpg,.jpeg,.png,.webp,.gif,.bmp,image/*"
                         className="hidden"
                         onChange={(e) => {
                             if (e.target.files) {
@@ -775,9 +971,14 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                 <div className="mt-2 text-[10px] text-gray-500 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
                     <span className={`w-1 h-1 rounded-full animate-pulse ${error ? "bg-red-500" : "bg-green-500"}`} />
                     AHME Context-Aware AI
-                    {successFiles.length > 0 && (
+                    {webSearchEnabled && (
+                        <span className="normal-case tracking-normal text-emerald-400/70">
+                            · 🌐 Web
+                        </span>
+                    )}
+                    {totalAttachments > 0 && (
                         <span className="normal-case tracking-normal text-blue-400/70">
-                            · {successFiles.length}件の添付
+                            · {totalAttachments}件の添付
                         </span>
                     )}
                 </div>
