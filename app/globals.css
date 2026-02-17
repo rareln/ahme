@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Monaco Editor 行番号カラムのカスタマイズ */
+.monaco-editor .margin {
+  background-color: #000000 !important;
+}
+
+.monaco-editor .line-numbers {
+  color: #888888 !important;
+  width: 35px !important;
+}
+
+/* カレント行ハイライト (ダークグレー) */
+.monaco-editor .view-overlays .current-line {
+  background-color: #333333 !important;
+  border: none !important;
+}
+
+/* 行番号のアクティブハイライトを抑制 */
+.monaco-editor .line-numbers.active-line-number {
+  color: #888888 !important;
+}
+
+/* Fcitx5 向け最小構成 */
+.monaco-editor .inputarea {
+  /* 1px ではなく、OSが視認できる最小サイズ */
+  width: 1px !important;
+  height: 1px !important;
+  /* 透明度を 0 にせず、ごく僅かに残す (OSへの存在証明) */
+  opacity: 0.01 !important;
+}
