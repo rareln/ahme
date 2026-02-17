@@ -13,6 +13,7 @@ import {
   Separator as PanelResizeHandle,
 } from "react-resizable-panels";
 import AiPanel from "@/components/AiPanel";
+import { EditorProvider } from "@/components/EditorContext";
 
 /** ユニークID生成 */
 function generateId(): string {
@@ -378,89 +379,91 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900 text-white">
-      {/* メニューバー */}
-      <Header
-        onOpenFile={handleOpenFile}
-        onSave={() => handleSave()}
-        onSaveAs={() => handleSaveAs()}
-        onSearch={handleSearch}
-        onReplace={handleReplace}
-        onSettings={() => setSettingsOpen(true)}
-        fontSize={settings.fontSize}
-        onFontSizeChange={(size) => setSettings(prev => ({ ...prev, fontSize: size }))}
-        aiEnabled={aiEnabled}
-        onToggleAi={() => setAiEnabled(!aiEnabled)}
-      />
+    <EditorProvider>
+      <div className="flex flex-col h-screen bg-gray-900 text-white">
+        {/* メニューバー */}
+        <Header
+          onOpenFile={handleOpenFile}
+          onSave={() => handleSave()}
+          onSaveAs={() => handleSaveAs()}
+          onSearch={handleSearch}
+          onReplace={handleReplace}
+          onSettings={() => setSettingsOpen(true)}
+          fontSize={settings.fontSize}
+          onFontSizeChange={(size) => setSettings(prev => ({ ...prev, fontSize: size }))}
+          aiEnabled={aiEnabled}
+          onToggleAi={() => setAiEnabled(!aiEnabled)}
+        />
 
-      {/* タブバー */}
-      <TabBar
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onSelectTab={setActiveTabId}
-        onAddTab={handleAddTab}
-        onCloseTab={handleCloseTab}
-      />
+        {/* タブバー */}
+        <TabBar
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSelectTab={setActiveTabId}
+          onAddTab={handleAddTab}
+          onCloseTab={handleCloseTab}
+        />
 
-      {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}
-      <main className="flex-1 overflow-hidden relative">
-        <PanelGroup orientation="horizontal" id="main-layout">
-          <Panel defaultSize="65" minSize="20" id="editor-panel">
-            <div className="h-full w-full">
-              {activeTab && (
-                <MemoEditor
-                  key={activeTab.id}
-                  defaultValue={activeTab.content}
-                  language={activeTab.language}
-                  settings={settings}
-                  onChange={handleContentChange}
-                  onCursorChange={handleCursorChange}
-                  showSearch={searchTrigger}
-                  showReplace={replaceTrigger}
-                />
-              )}
-            </div>
-          </Panel>
+        {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}
+        <main className="flex-1 overflow-hidden relative">
+          <PanelGroup orientation="horizontal" id="main-layout">
+            <Panel defaultSize="65" minSize="20" id="editor-panel">
+              <div className="h-full w-full">
+                {activeTab && (
+                  <MemoEditor
+                    key={activeTab.id}
+                    defaultValue={activeTab.content}
+                    language={activeTab.language}
+                    settings={settings}
+                    onChange={handleContentChange}
+                    onCursorChange={handleCursorChange}
+                    showSearch={searchTrigger}
+                    showReplace={replaceTrigger}
+                  />
+                )}
+              </div>
+            </Panel>
 
-          {aiEnabled && (
-            <>
-              <PanelResizeHandle
-                id="main-resizer"
-                className="w-1.5 bg-gray-800 hover:bg-blue-600 transition-colors cursor-col-resize flex items-center justify-center"
-              >
-                <div className="h-8 w-px bg-gray-600" />
-              </PanelResizeHandle>
-              <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
-                <AiPanel editorContent={activeTab?.content || ""} />
-              </Panel>
-            </>
-          )}
-        </PanelGroup>
-      </main>
+            {aiEnabled && (
+              <>
+                <PanelResizeHandle
+                  id="main-resizer"
+                  className="w-1.5 bg-gray-800 hover:bg-blue-600 transition-colors cursor-col-resize flex items-center justify-center"
+                >
+                  <div className="h-8 w-px bg-gray-600" />
+                </PanelResizeHandle>
+                <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
+                  <AiPanel editorContent={activeTab?.content || ""} />
+                </Panel>
+              </>
+            )}
+          </PanelGroup>
+        </main>
 
-      {/* ステータスバー */}
-      <StatusBar
-        line={cursorLine}
-        column={cursorColumn}
-        language={activeTab?.language ?? "text"}
-      />
+        {/* ステータスバー */}
+        <StatusBar
+          line={cursorLine}
+          column={cursorColumn}
+          language={activeTab?.language ?? "text"}
+        />
 
-      {/* 設定ダイアログ */}
-      <SettingsDialog
-        isOpen={settingsOpen}
-        settings={settings}
-        onClose={() => setSettingsOpen(false)}
-        onSave={setSettings}
-      />
+        {/* 設定ダイアログ */}
+        <SettingsDialog
+          isOpen={settingsOpen}
+          settings={settings}
+          onClose={() => setSettingsOpen(false)}
+          onSave={setSettings}
+        />
 
-      {/* 未保存確認ダイアログ */}
-      <SaveConfirmDialog
-        isOpen={closingTabId !== null}
-        fileName={tabs.find((t) => t.id === closingTabId)?.title ?? ""}
-        onSave={handleConfirmSave}
-        onDiscard={handleConfirmDiscard}
-        onCancel={handleConfirmCancel}
-      />
-    </div>
+        {/* 未保存確認ダイアログ */}
+        <SaveConfirmDialog
+          isOpen={closingTabId !== null}
+          fileName={tabs.find((t) => t.id === closingTabId)?.title ?? ""}
+          onSave={handleConfirmSave}
+          onDiscard={handleConfirmDiscard}
+          onCancel={handleConfirmCancel}
+        />
+      </div>
+    </EditorProvider>
   );
 }
