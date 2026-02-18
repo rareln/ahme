@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AHME (AI Hybrid Minimal Editor) - FIX版
 
-## Getting Started
+AHMEは、「軽量・爆速・プライバシー重視」の哲学に基づいて開発された、ローカルAI統合型の究極の執筆コックピットです。
+ElectronとNext.jsのハイブリッド構成により、ネイティブアプリの軽快さとWeb技術の柔軟性を両立し、思考を一切止めないシームレスなUI/UXを実現しています。
 
-First, run the development server:
+## ✨ コア機能 (Core Features)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* **🧠 ローカルAIの完全統合 (Ollama連携)**
+  * `gemma3:12b` 等の強力なローカルLLMをバックエンドに採用。オフラインでもセキュアかつ高速なAIチャット・文章生成が可能です。
+* **👁️ マルチモーダル画像認識**
+  * チャット欄への画像のドラッグ＆ドロップに対応。画像をクライアントサイドでBase64変換し、サーバー負荷をゼロに抑えつつ、テキストと画像を高次元で同時に解析します。
+* **📚 外部記憶とRAG (Retrieval-Augmented Generation)**
+  * PDFやテキストファイルをドロップするだけで、その内容をコンテキストとして保持。論文や長文資料を参照しながらの高度な執筆をサポートします。
+* **🌐 爆速Web検索統合 (Tavily API)**
+  * 「3秒のハードタイムアウト」を備えた堅牢なWeb検索機能を搭載。AIが最新情報を取得しつつ、APIの遅延によってエディタがフリーズする事態を完全に防ぎます。
+* **⚡ 思考を止めないシームレスなUX (Monaco Editor拡張)**
+  * **なぞって挿入:** チャットのAI回答を選択すると「エディタに挿入」ボタンが最前面に出現し、ワンクリックで本文へ反映。
+  * **OSネイティブなコンテキストメニュー:** エディタ・チャット両方の右クリックメニューを拡張。「コピー」や「Google検索（OSデフォルトブラウザ起動）」を実装し、エディタから離脱せずに調査が可能です。
+  * **状態記憶:** 文字サイズや、左右パネルの分割比率を `localStorage` とマウント待機パターンで完全に記憶。次回起動時も一瞬で「いつもの環境」が復元されます。
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ 技術スタック (Tech Stack)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **フロントエンド:** Next.js (App Router), React, Tailwind CSS
+* **エディタエンジン:** Monaco Editor (`@monaco-editor/react`)
+* **バックエンド / デスクトップ:** Electron (IPC通信によるセキュアなウィンドウ・ブラウザ制御)
+* **AI・検索エンジン:** Ollama (ローカルLLM API), Tavily Search API
+* **UIコンポーネント:** `react-resizable-panels` (状態記憶対応)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 セットアップと起動 (Setup & Run)
 
-## Learn More
+1. **前提条件**
+   * Node.js がインストールされていること。
+   * Ollama がインストールされ、`gemma3:12b` (または任意のモデル) がプルされていること。
 
-To learn more about Next.js, take a look at the following resources:
+2. **環境変数の設定**
+   プロジェクトルートに `.env.local` ファイルを作成し、Tavily APIキーを設定します。
+   ```env
+   TAVILY_API_KEY=tvly-your_api_key_here
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3.依存パッケージのインストール
+npm install
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4.開発モードでの起動
+Next.jsサーバーとElectronプロセスを同時に起動します。
+npm run dev:all

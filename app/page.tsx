@@ -399,6 +399,16 @@ export default function Home() {
     electronAPI.on('menu:replace', handleReplace);
   }, [handleAddTab, handleOpenFile, handleSave, handleSaveAs, handleSearch, handleReplace]);
 
+  // --- ウィンドウタイトルの動的更新 ---
+  useEffect(() => {
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+    if (activeTab) {
+      document.title = `${activeTab.title} - AHME`;
+    } else {
+      document.title = "AHME";
+    }
+  }, [tabs, activeTabId]);
+
   // --- 保存確認ダイアログのハンドラ ---
   const handleConfirmSave = useCallback(async () => {
     if (!closingTabId) return;
