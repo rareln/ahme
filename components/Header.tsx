@@ -44,15 +44,15 @@ export default function Header({
         <div className="flex items-center gap-0.5 text-sm">
           <button
             onClick={() => onFontSizeChange(Math.max(10, fontSize - 1))}
-            className="px-1.5 py-1 rounded hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+            className="px-1.5 py-1 rounded hover:bg-gray-700 transition-colors text-gray-400 hover:text-white font-bold text-base leading-none"
             title="文字を小さく"
           >
             −
           </button>
-          <span className="text-xs text-gray-400 w-6 text-center select-none tabular-nums">{fontSize}</span>
+          <span className="text-sm font-bold text-gray-200 w-8 text-center select-none tabular-nums">{fontSize}</span>
           <button
             onClick={() => onFontSizeChange(Math.min(32, fontSize + 1))}
-            className="px-1.5 py-1 rounded hover:bg-gray-700 transition-colors text-gray-300 hover:text-white"
+            className="px-1.5 py-1 rounded hover:bg-gray-700 transition-colors text-gray-400 hover:text-white font-bold text-base leading-none"
             title="文字を大きく"
           >
             ＋

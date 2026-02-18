@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 
@@ -51,6 +51,14 @@ async function createWindow() {
 
     win.loadURL(startUrl).catch(err => {
         console.error('Failed to load URL:', err);
+    });
+
+    // 外部リンク（target="_blank"）をOSのデフォルトブラウザで開く
+    win.webContents.setWindowOpenHandler(({ url }) => {
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            shell.openExternal(url);
+        }
+        return { action: 'deny' };
     });
 
     // 開発者ツールをオプションで開く (Ctrl+Shift+I)
@@ -185,6 +193,15 @@ ipcMain.handle('fs:writeFile', async (event, { path: filePath, content }) => {
         console.error('Write file error:', error);
         throw error;
     }
+});
+
+// 外部URL をOSブラウザで開く IPC ハンドラ（コンテキストメニュー等から使用）
+ipcMain.handle('shell:openExternal', async (event, url) => {
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+        await shell.openExternal(url);
+        return true;
+    }
+    return false;
 });
 
 app.whenReady().then(() => {

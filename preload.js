@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveAsFile: (content, defaultPath) => ipcRenderer.invoke('dialog:saveAsFile', { content, defaultPath }),
     readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
     writeFile: (path, content) => ipcRenderer.invoke('fs:writeFile', { path, content }),
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
     on: (channel, callback) => ipcRenderer.on(channel, (event, ...args) => callback(...args)),
 });

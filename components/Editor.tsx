@@ -109,6 +109,28 @@ const MemoEditor = React.memo(
                 onCursorChange(e.position.lineNumber, e.position.column);
             });
 
+            // --- Google検索アクション ---
+            editor.addAction({
+                id: "google-search-action",
+                label: "🔍 Google検索",
+                contextMenuGroupId: "navigation",
+                contextMenuOrder: 1.5,
+                run: (ed) => {
+                    const selection = ed.getSelection();
+                    if (!selection) return;
+                    const text = ed.getModel()?.getValueInRange(selection);
+                    if (text && text.trim().length > 0) {
+                        const url = `https://www.google.com/search?q=${encodeURIComponent(text.trim())}`;
+                        const api = (window as any).electronAPI;
+                        if (api?.openExternal) {
+                            api.openExternal(url);
+                        } else {
+                            window.open(url, '_blank');
+                        }
+                    }
+                }
+            });
+
             // --- AI補完アクション ---
             editor.addAction({
                 id: "ai-completion-action",
@@ -249,6 +271,11 @@ const MemoEditor = React.memo(
                             vertical: "visible",
                             horizontal: "visible",
                         },
+                        // 視覚ノイズ軽減: 同じ単語の自動ハイライト等を無効化
+                        selectionHighlight: false,
+                        occurrencesHighlight: "off",
+                        overviewRulerBorder: false,
+                        hideCursorInOverviewRuler: true,
                     }}
                 />
             </div>

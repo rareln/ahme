@@ -116,6 +116,39 @@ function parseMessageContent(content: string): ContentBlock[] {
     return blocks;
 }
 
+/** URL を検出してリンク化するヘルパー */
+const URL_REGEX = /(https?:\/\/[^\s<>()"']+)/g;
+
+function renderTextWithLinks(text: string, fontSize: number): React.ReactNode[] {
+    const parts = text.split(URL_REGEX);
+    return parts.map((part, i) => {
+        if (URL_REGEX.test(part)) {
+            URL_REGEX.lastIndex = 0; // reset regex state
+            const handleClick = (e: React.MouseEvent) => {
+                e.preventDefault();
+                const api = (window as any).electronAPI;
+                if (api?.openExternal) {
+                    api.openExternal(part);
+                } else {
+                    window.open(part, '_blank');
+                }
+            };
+            return (
+                <a
+                    key={i}
+                    href={part}
+                    onClick={handleClick}
+                    className="text-blue-400 underline hover:text-blue-300 cursor-pointer break-all"
+                    title={part}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return <React.Fragment key={i}>{part}</React.Fragment>;
+    });
+}
+
 /** コードブロック表示コンポーネント */
 function CodeBlockWithInsert({
     code,
@@ -196,7 +229,7 @@ function MessageContent({
                         className="text-gray-200 leading-relaxed whitespace-pre-wrap"
                         style={{ fontSize: `${fontSize}px` }}
                     >
-                        {block.content}
+                        {renderTextWithLinks(block.content, fontSize)}
                     </div>
                 )
             )}
@@ -210,55 +243,75 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     const [visible, setVisible] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [selectedText, setSelectedText] = useState("");
-    const buttonRef = useRef<HTMLDivElement>(null);
 
-    const handleMouseUp = useCallback(() => {
-        setTimeout(() => {
-            const sel = window.getSelection();
-            const text = sel?.toString()?.trim();
-            if (!text || text.length < 2) {
-                setVisible(false);
-                return;
-            }
+    // 選択範囲の変更を監視して表示・非表示を切り替え
+    const updateVisibility = useCallback(() => {
+        const sel = window.getSelection();
+        const text = sel?.toString()?.trim();
 
-            const container = containerRef.current;
-            if (!container || !sel?.anchorNode) {
-                setVisible(false);
-                return;
-            }
-            if (!container.contains(sel.anchorNode)) {
-                setVisible(false);
-                return;
-            }
+        // 選択テキストがない、または短すぎる場合は非表示
+        if (!text || text.length < 1) {
+            setVisible(false);
+            return;
+        }
 
-            const range = sel.getRangeAt(0);
-            const rect = range.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
+        // 選択範囲の座標を取得 (Viewport基準)
+        const range = sel!.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
 
-            setSelectedText(text);
-            setPosition({
-                x: Math.min(rect.right - containerRect.left, containerRect.width - 140),
-                y: rect.bottom - containerRect.top + 4,
-            });
-            setVisible(true);
-        }, 10);
-    }, [containerRef]);
+        // コンテナ内かどうかを判定（エディタ等での誤表示防止）
+        if (!containerRef.current || !sel || !sel.anchorNode || !containerRef.current.contains(sel.anchorNode)) {
+            return;
+        }
 
-    const handleMouseDown = useCallback((e: MouseEvent) => {
-        if (buttonRef.current?.contains(e.target as Node)) return;
-        setVisible(false);
+        if (rect.width === 0 || rect.height === 0) return;
+
+        setSelectedText(text);
+        // Fixed配置なので Viewport 座標をそのまま使用
+        // 少し上に表示 (Y - 40px), 左端合わせ (X)
+        setPosition({
+            x: rect.left + (rect.width / 2) - 60, // 中央寄せ試行 (ボタン幅120px想定)
+            y: rect.top - 40,
+        });
+        setVisible(true);
     }, []);
 
     useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-        container.addEventListener("mouseup", handleMouseUp);
-        document.addEventListener("mousedown", handleMouseDown);
-        return () => {
-            container.removeEventListener("mouseup", handleMouseUp);
-            document.removeEventListener("mousedown", handleMouseDown);
+        const handleDocumentMouseUp = (e: MouseEvent) => {
+            // 左クリックのみ反応
+            if (e.button !== 0) return;
+            // 少し遅延させて選択状態を確定させる
+            setTimeout(updateVisibility, 10);
         };
-    }, [containerRef, handleMouseUp, handleMouseDown]);
+
+        const handleDocumentMouseDown = (e: MouseEvent) => {
+            // ここでは即座に隠さず、次のMouseUpやSelectionChangeで判定する
+            // ただし、選択解除（クリック）を検知するためにチェックは必要
+            // ボタン自体のクリックは stopPropagation されるのでここには来ない
+            setTimeout(() => {
+                const sel = window.getSelection();
+                if (!sel || sel.isCollapsed) {
+                    setVisible(false);
+                }
+            }, 10);
+        };
+
+        // スクロール時も位置再計算あるいは非表示にする
+        const handleScroll = () => {
+            // スクロール中は非表示にするのが安全（追従は重い）
+            setVisible(false);
+        };
+
+        document.addEventListener("mouseup", handleDocumentMouseUp);
+        document.addEventListener("mousedown", handleDocumentMouseDown);
+        document.addEventListener("scroll", handleScroll, true);
+
+        return () => {
+            document.removeEventListener("mouseup", handleDocumentMouseUp);
+            document.removeEventListener("mousedown", handleDocumentMouseDown);
+            document.removeEventListener("scroll", handleScroll, true);
+        };
+    }, [updateVisibility]);
 
     const handleInsert = () => {
         if (selectedText) {
@@ -271,15 +324,20 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     if (!visible) return null;
 
     return (
-        <div ref={buttonRef} className="absolute z-50" style={{ left: position.x, top: position.y }}>
+        <div
+            className="fixed z-[99999]"
+            style={{ left: position.x, top: position.y }}
+            onMouseDown={(e) => {
+                // ボタンクリックで選択範囲が解除されないようにする (超重要)
+                e.preventDefault();
+                e.stopPropagation();
+            }}
+        >
             <button
                 onClick={handleInsert}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold
-                           bg-emerald-500/15 text-emerald-400 border border-emerald-500/30
-                           hover:bg-emerald-500/25 hover:border-emerald-500/50
-                           hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]
-                           backdrop-filter backdrop-blur-sm transition-all duration-200"
-                style={{ animation: "ai-widget-in 0.15s ease-out" }}
+                           bg-emerald-600 text-white shadow-lg border border-emerald-400
+                           hover:bg-emerald-500 transition-all cursor-pointer animate-in fade-in zoom-in duration-150"
                 title="選択テキストをエディタのカーソル位置に挿入"
             >
                 <span>📝</span> エディタに挿入
@@ -345,7 +403,11 @@ function AttachmentChip({
 export default function AiPanel({ editorContent }: AiPanelProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
-    const [fontSize, setFontSize] = useState(14);
+    const [fontSize, setFontSize] = useState(() => {
+        if (typeof window === 'undefined') return 14;
+        const saved = localStorage.getItem('ahme-chat-font-size');
+        return saved ? Math.max(10, Math.min(30, parseInt(saved, 10) || 14)) : 14;
+    });
     const [availableModels, setAvailableModels] = useState<string[]>([]);
     const [selectedModel, setSelectedModel] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
@@ -405,6 +467,35 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     };
 
     useEffect(() => { fetchModels(); }, []);
+
+    // テキストサイズの変更を localStorage に保存
+    useEffect(() => {
+        localStorage.setItem('ahme-chat-font-size', String(fontSize));
+    }, [fontSize]);
+
+    // ── 右クリックコンテキストメニュー State ──
+    const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; text: string } | null>(null);
+
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+        const sel = window.getSelection();
+        const text = sel?.toString()?.trim();
+        if (!text || text.length < 1) return; // テキスト未選択時はデフォルトメニュー
+        e.preventDefault();
+        e.stopPropagation(); // 親要素への伝播を阻止
+        setCtxMenu({ x: e.clientX, y: e.clientY, text });
+    }, []);
+
+    // クリックでコンテキストメニューを閉じる
+    useEffect(() => {
+        if (!ctxMenu) return;
+        const close = () => setCtxMenu(null);
+        window.addEventListener('click', close);
+        window.addEventListener('contextmenu', close);
+        return () => {
+            window.removeEventListener('click', close);
+            window.removeEventListener('contextmenu', close);
+        };
+    }, [ctxMenu]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -733,13 +824,13 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-gray-800/50">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2 text-gray-200">
-                        <Bot size={16} className="text-blue-400" />
-                        <span className="font-semibold whitespace-nowrap">AI Assistant</span>
+                        <Bot size={20} className="text-blue-400" />
+                        <span className="font-bold text-base whitespace-nowrap">AI Assistant</span>
                     </div>
-                    <div className="flex items-center gap-1.5 bg-gray-900/50 px-2 py-0.5 rounded border border-gray-700">
-                        <button onClick={() => setFontSize(Math.max(10, fontSize - 1))} className="text-gray-400 hover:text-white transition-colors" title="文字を小さく">-</button>
-                        <span className="text-[10px] text-gray-400 w-4 text-center select-none">{fontSize}</span>
-                        <button onClick={() => setFontSize(Math.min(30, fontSize + 1))} className="text-gray-400 hover:text-white transition-colors" title="文字を大きく">+</button>
+                    <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1.5 rounded border border-gray-700">
+                        <button onClick={() => setFontSize(Math.max(10, fontSize - 1))} className="text-gray-400 hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を小さく">-</button>
+                        <span className="text-sm font-bold text-gray-300 w-6 text-center select-none">{fontSize}</span>
+                        <button onClick={() => setFontSize(Math.min(30, fontSize + 1))} className="text-gray-400 hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を大きく">+</button>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -748,7 +839,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
                             disabled={isLoadingModels}
-                            className="appearance-none w-36 bg-gray-700 text-gray-200 text-[10px] px-2 py-1 pr-6 rounded cursor-pointer hover:bg-gray-600 transition-colors border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 truncate disabled:opacity-50"
+                            className="appearance-none w-48 bg-gray-700 text-gray-200 text-sm font-medium px-3 py-2 pr-8 rounded cursor-pointer hover:bg-gray-600 transition-colors border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 truncate disabled:opacity-50"
                         >
                             {availableModels.map(model => (
                                 <option key={model} value={model}>{model}</option>
@@ -761,7 +852,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                             className={`p-1 text-gray-400 hover:text-white transition-colors ${isLoadingModels ? "animate-spin" : ""}`}
                             title="モデルリストを更新"
                         >
-                            <RefreshCw size={14} />
+                            <RefreshCw size={16} />
                         </button>
                     </div>
                     {/* 🌐 Web検索トグル */}
@@ -773,10 +864,10 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                             }`}
                         title={webSearchEnabled ? "Web検索: ON" : "Web検索: OFF"}
                     >
-                        <Globe size={15} />
+                        <Globe size={18} />
                     </button>
                     <button onClick={handleClear} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400 transition-colors" title="履歴をクリア">
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                     </button>
                 </div>
             </div>
@@ -785,7 +876,8 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
             <div className="flex-1 overflow-hidden relative">
                 <div
                     ref={scrollRef}
-                    className="h-full overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+                    className="h-full overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent select-text"
+                    onContextMenu={handleContextMenu}
                 >
                     {messages.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-3 opacity-50">
@@ -838,8 +930,50 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                     )}
                 </div>
 
-                <SelectionInsertButton containerRef={scrollRef} />
+                {/* 選択時インサートボタン（z-index調整） */}
+                <div className="relative z-10">
+                    <SelectionInsertButton containerRef={scrollRef} />
+                </div>
             </div>
+
+            {/* 右クリックコンテキストメニュー (最前面・Fixed配置・ポータル的扱い) */}
+            {ctxMenu && (
+                <div
+                    className="fixed z-[99999] bg-gray-800 border border-gray-500 rounded-lg shadow-2xl py-2 min-w-[200px] backdrop-blur-md"
+                    style={{ left: ctxMenu.x, top: ctxMenu.y }}
+                    onClick={(e) => e.stopPropagation()}
+                    onContextMenu={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                >
+                    <button
+                        className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 transition-colors flex items-center gap-2.5"
+                        onClick={() => {
+                            navigator.clipboard.writeText(ctxMenu.text);
+                            setCtxMenu(null);
+                        }}
+                    >
+                        <span className="text-base">📋</span> コピー
+                    </button>
+                    <div className="border-t border-gray-700 my-1" />
+                    <button
+                        className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 transition-colors flex items-center gap-2.5"
+                        onClick={() => {
+                            const url = `https://www.google.com/search?q=${encodeURIComponent(ctxMenu.text)}`;
+                            const api = (window as any).electronAPI;
+                            if (api?.openExternal) {
+                                api.openExternal(url);
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                            setCtxMenu(null);
+                        }}
+                    >
+                        <span className="text-base">🔍</span> Google検索
+                    </button>
+                </div>
+            )}
 
             {/* ── 入力エリア（Dropzone 対応）── */}
             <div
@@ -983,6 +1117,6 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

@@ -11,6 +11,7 @@ import {
   Group as PanelGroup,
   Panel,
   Separator as PanelResizeHandle,
+  type GroupImperativeHandle,
 } from "react-resizable-panels";
 import AiPanel from "@/components/AiPanel";
 import { EditorProvider } from "@/components/EditorContext";
@@ -54,6 +55,7 @@ interface SessionData {
 }
 
 const SESSION_KEY = "ahme-session";
+const PANEL_LAYOUT_KEY = "ahme-panel-layout";
 
 /** セッションをlocalStorageに保存 */
 function saveSession(data: SessionData) {
@@ -74,6 +76,25 @@ function loadSession(): SessionData | null {
     console.error("セッション復元に失敗:", e);
     return null;
   }
+}
+
+/** パネルレイアウトをlocalStorageから復元（SSRセーフ） */
+function loadPanelLayout(): any | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = localStorage.getItem(PANEL_LAYOUT_KEY);
+    if (!raw) return undefined;
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
+}
+
+/** パネルレイアウトをlocalStorageに保存 */
+function savePanelLayout(layout: any) {
+  try {
+    localStorage.setItem(PANEL_LAYOUT_KEY, JSON.stringify(layout));
+  } catch { /* ignore */ }
 }
 
 /**
@@ -158,6 +179,25 @@ export default function Home() {
 
   // --- アクティブタブ取得 ---
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
+
+  // --- パネル比率の保存・復元 ---
+  // Note: react-resizable-panels uses "groupRef" instead of "ref"
+  const panelGroupRef = useRef<any>(null);
+  const [layout, setLayout] = useState<any | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
+
+  // 初回マウント時に localStorage からレイアウトを復元 (SSR回避のため useEffect 内で実行)
+  useEffect(() => {
+    const saved = loadPanelLayout();
+    if (saved) {
+      setLayout(saved);
+    }
+    setMounted(true);
+  }, []);
+
+  const handlePanelLayoutChanged = useCallback((layout: any) => {
+    savePanelLayout(layout);
+  }, []);
 
   // --- セッション自動保存 ---
   const tabsRef = useRef(tabs);
@@ -406,38 +446,46 @@ export default function Home() {
 
         {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}
         <main className="flex-1 overflow-hidden relative">
-          <PanelGroup orientation="horizontal" id="main-layout">
-            <Panel defaultSize="65" minSize="20" id="editor-panel">
-              <div className="h-full w-full">
-                {activeTab && (
-                  <MemoEditor
-                    key={activeTab.id}
-                    defaultValue={activeTab.content}
-                    language={activeTab.language}
-                    settings={settings}
-                    onChange={handleContentChange}
-                    onCursorChange={handleCursorChange}
-                    showSearch={searchTrigger}
-                    showReplace={replaceTrigger}
-                  />
-                )}
-              </div>
-            </Panel>
+          {!mounted ? null : (
+            <PanelGroup
+              groupRef={panelGroupRef}
+              defaultLayout={layout}
+              orientation="horizontal"
+              id="main-layout"
+              onLayoutChanged={handlePanelLayoutChanged}
+            >
+              <Panel defaultSize="65" minSize="20" id="editor-panel">
+                <div className="h-full w-full">
+                  {activeTab && (
+                    <MemoEditor
+                      key={activeTab.id}
+                      defaultValue={activeTab.content}
+                      language={activeTab.language}
+                      settings={settings}
+                      onChange={handleContentChange}
+                      onCursorChange={handleCursorChange}
+                      showSearch={searchTrigger}
+                      showReplace={replaceTrigger}
+                    />
+                  )}
+                </div>
+              </Panel>
 
-            {aiEnabled && (
-              <>
-                <PanelResizeHandle
-                  id="main-resizer"
-                  className="w-1.5 bg-gray-800 hover:bg-blue-600 transition-colors cursor-col-resize flex items-center justify-center"
-                >
-                  <div className="h-8 w-px bg-gray-600" />
-                </PanelResizeHandle>
-                <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
-                  <AiPanel editorContent={activeTab?.content || ""} />
-                </Panel>
-              </>
-            )}
-          </PanelGroup>
+              {aiEnabled && (
+                <>
+                  <PanelResizeHandle
+                    id="main-resizer"
+                    className="w-1.5 bg-gray-800 hover:bg-blue-600 transition-colors cursor-col-resize flex items-center justify-center"
+                  >
+                    <div className="h-8 w-px bg-gray-600" />
+                  </PanelResizeHandle>
+                  <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
+                    <AiPanel editorContent={activeTab?.content || ""} />
+                  </Panel>
+                </>
+              )}
+            </PanelGroup>
+          )}
         </main>
 
         {/* ステータスバー */}

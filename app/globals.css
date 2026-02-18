@@ -27,7 +27,8 @@ body {
 
 /* Monaco Editor 行番号カラムのカスタマイズ */
 .monaco-editor .margin {
-  background-color: #000000 !important;
+  background-color: #1f2937 !important;
+  /* ステータスバー (bg-gray-800) と統一 */
 }
 
 .monaco-editor .line-numbers {
@@ -46,11 +47,39 @@ body {
   color: #888888 !important;
 }
 
+/* ── 検索・置換ハイライトカラー ── */
+/* 検索マッチ（非選択）: 薄い茶色 */
+.monaco-editor .findMatch {
+  background-color: rgba(181, 137, 80, 0.45) !important;
+  border: 1px solid rgba(181, 137, 80, 0.6) !important;
+}
+
+/* 検索マッチ（現在選択中）: オレンジ */
+.monaco-editor .currentFindMatch {
+  background-color: rgba(255, 165, 0, 0.6) !important;
+  border: 1px solid rgba(255, 165, 0, 0.9) !important;
+}
+
+/* 置換対象ハイライト: 黄緑 */
+/* 置換対象ハイライト: 黄緑 */
+.monaco-editor .findMatchInPeekEditor,
+/* .monaco-editor .selectionHighlight,  <- ノイズになるため除外 */
+.monaco-editor .rangeHighlight {
+  background-color: rgba(174, 238, 80, 0.45) !important;
+  border: 1px solid rgba(174, 238, 80, 0.7) !important;
+}
+
 /* Fcitx5 向け最小構成 */
 .monaco-editor .inputarea {
-  /* 1px ではなく、OSが視認できる最小サイズ */
-  width: 1px !important;
-  height: 1px !important;
   /* 透明度を 0 にせず、ごく僅かに残す (OSへの存在証明) */
   opacity: 0.01 !important;
+}
+
+/* 選択テキストのハイライトカラー変更（鮮やかな青） */
+.monaco-editor .selected-text {
+  background-color: #0078d4 !important;
+}
+
+.monaco-editor.focused .selected-text {
+  background-color: #0078d4 !important;
 }
