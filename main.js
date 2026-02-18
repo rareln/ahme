@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, shell } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
+const fsSync = require('fs');
 
 const STATE_FILE = path.join(app.getPath('userData'), 'window-state.json');
 
@@ -204,15 +205,101 @@ ipcMain.handle('shell:openExternal', async (event, url) => {
     return false;
 });
 
-app.whenReady().then(() => {
-    createWindow();
+// 環境変数またはadditionalDataからファイルパスを取得（npmラッパー対策）
+// process.argv は npm run 経由だと握りつぶされるため使用しない
+function getFilePathFromEnvOrData(envFile, additionalData) {
+    let filePath = null;
 
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
+    // 1. 環境変数を優先（初回起動時、または2つ目のインスタンス自身）
+    if (envFile && typeof envFile === 'string' && envFile.trim().length > 0) {
+        filePath = envFile.trim();
+    }
+    // 2. additionalData（2つ目のインスタンスから送られてきたデータ）
+    else if (additionalData && additionalData.filepath && typeof additionalData.filepath === 'string') {
+        filePath = additionalData.filepath;
+    }
+
+    if (filePath) {
+        try {
+            if (fsSync.existsSync(filePath) && fsSync.statSync(filePath).isFile()) {
+                return filePath;
+            }
+        } catch (e) {
+            // アクセスエラー等は無視
+        }
+    }
+    return null;
+}
+
+
+let pendingOpenData = null; // レンダラー準備完了までデータを保持するための変数
+
+// ファイルを読み込んでデータオブジェクトを返す（送信はしない）
+async function loadFileContent(filePath) {
+    if (!filePath) return null;
+    try {
+        const content = await fs.readFile(filePath, 'utf8');
+        const fileName = path.basename(filePath);
+        return { fileName, content, filePath };
+    } catch (e) {
+        console.error('File read error:', e);
+        return null;
+    }
+}
+
+// UIからの準備完了通知を受け取る
+ipcMain.on('ui-ready', (event) => {
+    if (pendingOpenData) {
+        event.sender.send('open-external-file', pendingOpenData);
+        pendingOpenData = null; // 送信後はクリア
+    }
+});
+
+// シングルインスタンスロック
+// 2つ目のインスタンスが起動した際、環境変数 (AHME_OPEN_FILE) を1つ目に渡す
+const additionalData = { filepath: process.env.AHME_OPEN_FILE };
+const gotTheLock = app.requestSingleInstanceLock(additionalData);
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', async (event, commandLine, workingDirectory, additionalData) => {
+        // すでにインスタンスがある場合、ウィンドウにフォーカス
+        const wins = BrowserWindow.getAllWindows();
+        if (wins.length > 0) {
+            const win = wins[0];
+            if (win.isMinimized()) win.restore();
+            win.focus();
+
+            // additionalData からファイルパスを取得して開く
+            const filePath = getFilePathFromEnvOrData(null, additionalData);
+            if (filePath) {
+                const data = await loadFileContent(filePath);
+                if (data) {
+                    win.webContents.send('open-external-file', data);
+                }
+            }
         }
     });
-});
+
+    app.whenReady().then(async () => {
+        // 初回起動時のファイルチェック（環境変数から）
+        const filePath = getFilePathFromEnvOrData(process.env.AHME_OPEN_FILE, null);
+        if (filePath) {
+            // まだウィンドウもIPCもないため、データを保持しておく
+            pendingOpenData = await loadFileContent(filePath);
+        }
+
+        createWindow();
+
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                createWindow();
+            }
+        });
+    });
+}
+
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

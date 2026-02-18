@@ -391,12 +391,66 @@ export default function Home() {
     const { electronAPI } = (window as any);
     if (!electronAPI || !electronAPI.on) return;
 
-    electronAPI.on('menu:new-file', handleAddTab);
-    electronAPI.on('menu:open-file', handleOpenFile);
-    electronAPI.on('menu:save-file', () => handleSave());
-    electronAPI.on('menu:save-as-file', () => handleSaveAs());
-    electronAPI.on('menu:search', handleSearch);
-    electronAPI.on('menu:replace', handleReplace);
+    const setupListener = (channel: string, handler: (...args: any[]) => void) => {
+      if (electronAPI.on) {
+        const unsubscribe = electronAPI.on(channel, handler);
+        return unsubscribe;
+      }
+      return () => { };
+    };
+
+    const unsubNew = setupListener('menu:new-file', handleAddTab);
+    const unsubOpen = setupListener('menu:open-file', handleOpenFile);
+    const unsubSave = setupListener('menu:save-file', () => handleSave());
+    const unsubSaveAs = setupListener('menu:save-as-file', () => handleSaveAs());
+    const unsubSearch = setupListener('menu:search', handleSearch);
+    const unsubReplace = setupListener('menu:replace', handleReplace);
+
+    // --- OSからのファイル直接起動 ---
+    const handleOpenExternal = (data: { fileName: string, content: string, filePath: string }) => {
+      // tabsRef.current を使用して最新のタブ状態を参照
+      const currentTabs = tabsRef.current;
+      const existing = currentTabs.find(t => t.filePath === data.filePath);
+
+      if (existing) {
+        setActiveTabId(existing.id);
+        return;
+      }
+
+      const newId = generateId();
+      const newTab: TabData = {
+        id: newId,
+        title: data.fileName,
+        content: data.content,
+        language: getLanguageFromPath(data.filePath),
+        filePath: data.filePath,
+        isModified: false,
+      };
+
+      // 関数型アップデートで安全に追加
+      setTabs(prev => {
+        // 念のためここでも再チェック（競合防止）
+        if (prev.some(t => t.filePath === data.filePath)) return prev;
+        return [...prev, newTab];
+      });
+      setActiveTabId(newId);
+    };
+
+    const unsubExternal = setupListener('open-external-file', handleOpenExternal);
+
+    // リスナー登録完了後に準備完了を通知
+    electronAPI.uiReady();
+
+    return () => {
+      unsubNew();
+      unsubOpen();
+      unsubSave();
+      unsubSaveAs();
+      unsubSearch();
+      unsubReplace();
+      unsubExternal();
+    };
+
   }, [handleAddTab, handleOpenFile, handleSave, handleSaveAs, handleSearch, handleReplace]);
 
   // --- ウィンドウタイトルの動的更新 ---
