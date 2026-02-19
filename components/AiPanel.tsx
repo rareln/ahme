@@ -415,6 +415,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     const [error, setError] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // ── 添付ファイル State ──
     const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
@@ -472,6 +473,15 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     useEffect(() => {
         localStorage.setItem('ahme-chat-font-size', String(fontSize));
     }, [fontSize]);
+
+    // 入力欄の高さを自動調整するエフェクト
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [inputValue]);
 
     // ── 右クリックコンテキストメニュー State ──
     const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; text: string } | null>(null);
@@ -1041,6 +1051,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
 
                 <div className="relative flex flex-col gap-2">
                     <textarea
+                        ref={textareaRef}
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => {
@@ -1065,7 +1076,7 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                         }
                         disabled={isGenerating}
                         style={{ fontSize: `${fontSize}px` }}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pr-20 text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none min-h-[80px] disabled:opacity-50"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pr-20 text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none min-h-[80px] max-h-[300px] overflow-y-auto disabled:opacity-50"
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
                         {/* 📎 ファイル添付ボタン */}
