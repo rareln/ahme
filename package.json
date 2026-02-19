@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "next dev -p 3002",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3002",
     "lint": "eslint",
     "electron": "electron . --no-sandbox",
-    "dev:all": "concurrently \"npm run dev\" \"wait-on http://localhost:3002 && electron . --no-sandbox\""
+    "dev:all": "concurrently \"npm run dev\" \"wait-on http://localhost:3002 && electron . --no-sandbox\"",
+    "start:all": "concurrently \"npm run start\" \"wait-on http://localhost:3002 && npm run electron\""
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

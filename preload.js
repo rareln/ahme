@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readFile: (path) => ipcRenderer.invoke('fs:readFile', path),
     writeFile: (path, content) => ipcRenderer.invoke('fs:writeFile', { path, content }),
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+    showContextMenu: () => ipcRenderer.send('show-context-menu'),
     uiReady: () => ipcRenderer.send('ui-ready'),
     on: (channel, callback) => {
         const subscription = (event, ...args) => callback(...args);

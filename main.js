@@ -306,3 +306,17 @@ app.on('window-all-closed', () => {
         app.quit();
     }
 });
+
+// --- 右クリックメニューの制御 ---
+ipcMain.on('show-context-menu', (event) => {
+    const template = [
+        { role: 'cut', label: '切り取り' },
+        { role: 'copy', label: 'コピー' },
+        { role: 'paste', label: '貼り付け' },
+        { type: 'separator' },
+        { role: 'selectAll', label: 'すべて選択' }
+    ];
+    const menu = Menu.buildFromTemplate(template);
+    const win = BrowserWindow.fromWebContents(event.sender);
+    menu.popup({ window: win });
+});

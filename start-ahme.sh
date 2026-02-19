@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# 1. ターミナルと同じNode.jsのパスを強制的に追加する（※そのままキープ！）
-export PATH="/run/user/1000/fnm_multishells/52355_1771409057772/bin:$PATH"
+# デバッグ用ログ（無事に起動できたらこの行は後で消してOKです）
+exec > /tmp/ahme-boot.log 2>&1
 
-# ▼OSから受け取ったファイルパスを「環境変数」として記憶させる（※追加！）
+# 1. fnmへのパスを通す
+export PATH="/home/raregroove/.local/share/fnm:$PATH"
+
+# 2. 【ここが解決の鍵】fnmに明示的にbashであることを伝えて初期化する
+eval "$(fnm env --shell bash)"
+
+# 3. OSから受け取ったファイルパスを記憶
 export AHME_OPEN_FILE="$1"
 
-# 2. ディレクトリの移動と起動
+# 4. ディレクトリ移動と起動
 cd /mnt/SSD4TB/projects/ahme
-
-# ▼ 引数リレー（-- "$@"）はもう使わないので削除し、シンプルにする
-npm run dev:all
+npm run start:all

@@ -1048,13 +1048,12 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                                 e.preventDefault();
                                 handleSend();
                             }
-                        }}
                         onContextMenu={(e) => {
                             e.preventDefault();
-                            const api = (window as any).electronAPI;
-                            if (api && api.showContextMenu) {
-                                api.showContextMenu();
+                            if (window.electronAPI && window.electronAPI.showContextMenu) {
+                                window.electronAPI.showContextMenu();
                             }
+                        }}
                         }}
                         placeholder={
                             isGenerating
@@ -1066,6 +1065,10 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
                         disabled={isGenerating}
                         style={{ fontSize: `${fontSize}px` }}
                         className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pr-20 text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none min-h-[80px] disabled:opacity-50"
+                        onContextMenu={(e) => {
+                            e.preventDefault();
+                            (window as any).electronAPI.showContextMenu();
+                        }}
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
                         {/* 📎 ファイル添付ボタン */}
