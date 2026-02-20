@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2, Globe, Image as ImageIcon } from "lucide-react";
+import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2, Globe, Image as ImageIcon, Menu } from "lucide-react";
 import { useEditorContext } from "./EditorContext";
 
 interface Message {
@@ -11,6 +11,16 @@ interface Message {
 
 interface AiPanelProps {
     editorContent: string;
+    currentFilePath?: string | null;
+}
+
+/** チャット履歴 */
+export interface ChatHistory {
+    id: string;
+    title: string;
+    updatedAt: string;
+    relatedFilePath: string | null;
+    messages: Message[];
 }
 
 /** 添付ファイル */
@@ -400,7 +410,7 @@ function AttachmentChip({
     );
 }
 
-export default function AiPanel({ editorContent }: AiPanelProps) {
+export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
     const [fontSize, setFontSize] = useState(() => {
@@ -428,6 +438,160 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     // ── Web検索 State ──
     const [webSearchEnabled, setWebSearchEnabled] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
+
+    // ── 履歴 State ──
+    const [historyList, setHistoryList] = useState<ChatHistory[]>([]);
+    const [currentChatId, setCurrentChatId] = useState<string>(() => {
+        return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    });
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+    // ── 履歴の永続化 ──
+    const loadHistory = useCallback(async () => {
+        try {
+            const api = (window as any).electronAPI;
+            if (api?.loadChatHistory) {
+                const data = await api.loadChatHistory();
+                setHistoryList(data || []);
+            }
+        } catch (err) {
+            console.error("[AiPanel] Failed to load chat history:", err);
+        }
+    }, []);
+
+    const saveHistory = useCallback(async (list: ChatHistory[]) => {
+        try {
+            const api = (window as any).electronAPI;
+            if (api?.saveChatHistory) {
+                await api.saveChatHistory(list);
+            }
+        } catch (err) {
+            console.error("[AiPanel] Failed to save chat history:", err);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadHistory();
+    }, [loadHistory]);
+
+    // メッセージが更新されるたびに、現在の履歴エントリを更新して保存
+    useEffect(() => {
+        if (messages.length === 0) return; // 空の時は保存しない（Clear後など）
+
+        setHistoryList(prev => {
+            const existingIdx = prev.findIndex(h => h.id === currentChatId);
+            let newList = [...prev];
+
+            const newEntry: ChatHistory = {
+                id: currentChatId,
+                title: existingIdx >= 0 ? prev[existingIdx].title : "新しいチャット",
+                updatedAt: new Date().toISOString(),
+                relatedFilePath: currentFilePath || null,
+                messages: [...messages],
+            };
+
+            if (existingIdx >= 0) {
+                newList[existingIdx] = newEntry;
+            } else {
+                newList.unshift(newEntry);
+            }
+
+            // 永続化をトリガー (非同期)
+            saveHistory(newList);
+            return newList;
+        });
+    }, [messages, currentChatId, currentFilePath, saveHistory]);
+
+    // 自動タイトル生成: メッセージが2個（1往復）かつタイトルが初期値の場合
+    useEffect(() => {
+        if (messages.length === 2 && messages[1].role === "assistant") {
+            const currentEntry = historyList.find(h => h.id === currentChatId);
+            if (currentEntry && currentEntry.title === "新しいチャット") {
+                generateTitleBackground(messages);
+            }
+        }
+    }, [messages, currentChatId, historyList]);
+
+    const generateTitleBackground = async (chatMessages: Message[]) => {
+        try {
+            const textToSummarize = chatMessages.map(m => `${m.role}: ${m.content}`).join("\n");
+            const prompt = "以下の会話を15文字以内で要約してタイトルを付けてください。タイトルのみ出力してください。バッククォートなどの装飾は不要です。:\n\n" + textToSummarize;
+
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: selectedModel || "llama3",
+                    messages: [
+                        { role: "system", content: "あなたは優秀なサマライザーです。短いタイトルのみを答えます。" },
+                        { role: "user", content: prompt }
+                    ],
+                    stream: false
+                }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                let newTitle = "新しいチャット";
+                if (data.message?.content) newTitle = data.message.content.trim();
+                else if (data.choices?.[0]?.message?.content) newTitle = data.choices[0].message.content.trim();
+
+                // タイトル中の不要な記号（改行、バッククォートなど）を除去
+                newTitle = newTitle.replace(/[`"'*]/g, "").split("\n")[0].substring(0, 15);
+                if (newTitle) {
+                    setHistoryList(prev => {
+                        const newList = prev.map(h => h.id === currentChatId ? { ...h, title: newTitle } : h);
+                        saveHistory(newList);
+                        return newList;
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("[AiPanel] Title generation failed:", err);
+        }
+    };
+
+    const handleNewChat = () => {
+        if (isGenerating && abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        setMessages([]);
+        setError(null);
+        setAttachedFiles([]);
+        setAttachedImages([]);
+        setCurrentChatId(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+
+        // スマホや狭い画面用などで、新規チャット時にサイドバーを閉じる場合はここで setIsSidebarOpen(false) など
+    };
+
+    const handleSelectHistory = (id: string) => {
+        if (isGenerating && abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        const hist = historyList.find(h => h.id === id);
+        if (hist) {
+            setCurrentChatId(id);
+            setMessages(hist.messages);
+            setError(null);
+            setAttachedFiles([]);
+            setAttachedImages([]);
+
+            // if (window.innerWidth < 768) setIsSidebarOpen(false); // スマホ対応の場合
+        }
+    };
+
+    // 現在のファイルパスに関連する履歴を上に持ってくるためのソート
+    const sortedHistory = useMemo(() => {
+        if (!currentFilePath) return historyList;
+        return [...historyList].sort((a, b) => {
+            const aRelated = a.relatedFilePath === currentFilePath;
+            const bRelated = b.relatedFilePath === currentFilePath;
+            if (aRelated && !bRelated) return -1;
+            if (!aRelated && bRelated) return 1;
+            // どちらも同じ条件なら日付の新しい順にしたい場合はここで Date 比較可能（通常は先頭追加なので順序通り）
+            return 0;
+        });
+    }, [historyList, currentFilePath]);
 
     const fetchModels = async () => {
         setIsLoadingModels(true);
@@ -818,10 +982,19 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
         if (isGenerating && abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
+
+        // 履歴からも削除する
+        setHistoryList(prev => {
+            const newList = prev.filter(h => h.id !== currentChatId);
+            saveHistory(newList);
+            return newList;
+        });
+
         setMessages([]);
         setError(null);
         setAttachedFiles([]);
         setAttachedImages([]);
+        setCurrentChatId(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
     };
 
     const hasParsing = attachedFiles.some(f => f.isParsing);
@@ -829,10 +1002,85 @@ export default function AiPanel({ editorContent }: AiPanelProps) {
     const totalAttachments = successFiles.length + attachedImages.length;
 
     return (
-        <div className="flex flex-col h-full bg-[#111827] border-l border-gray-700 text-sm">
+        <div className="flex flex-col h-full bg-[#111827] border-l border-gray-700 text-sm overflow-hidden relative">
+            {/* 履歴サイドバー */}
+            <div className={`absolute top-0 left-0 h-full bg-gray-900 border-r border-gray-700 z-50 transition-transform duration-300 w-64 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="flex items-center justify-between p-3 border-b border-gray-700">
+                    <div className="flex items-center gap-2">
+                        {/* サイドバー側にも三本線ボタンを配置 */}
+                        <button 
+                            onClick={() => setIsSidebarOpen(false)} 
+                            className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" 
+                            title="履歴を閉じる"
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <span className="font-bold text-gray-200">チャット履歴</span>
+                    </div>
+                    {/* 新規チャットボタン（右寄せ） */}
+                    <button onClick={handleNewChat} className="p-1 hover:bg-gray-700 rounded text-gray-300" title="新しいチャット">
+                        <span className="text-xl leading-none block">+</span>
+                    </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-700">
+                    {sortedHistory.length === 0 ? (
+                        <div className="text-gray-500 text-xs text-center mt-4">履歴はありません</div>
+                    ) : (
+                        sortedHistory.map(hist => {
+                            const isRelated = currentFilePath && hist.relatedFilePath === currentFilePath;
+                            const isActive = hist.id === currentChatId;
+                            return (
+                                <button
+                                    key={hist.id}
+                                    onClick={() => handleSelectHistory(hist.id)}
+                                    className={`w-full text-left p-2 rounded-md transition-colors text-xs flex items-center justify-between group
+                                        ${isActive ? 'bg-blue-900/30 border border-blue-500/30 text-blue-300'
+                                            : 'hover:bg-gray-800 text-gray-400 border border-transparent'}
+                                    `}
+                                >
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        {isRelated ? (
+                                            <span title="現在開いているファイルに関連" className="text-blue-400 shrink-0">📝</span>
+                                        ) : (
+                                            <Bot size={14} className="opacity-50 shrink-0" />
+                                        )}
+                                        <span className="truncate font-medium">{hist.title}</span>
+                                    </div>
+                                    <button
+                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // 1件削除処理
+                                            setHistoryList(prev => {
+                                                const newList = prev.filter(h => h.id !== hist.id);
+                                                saveHistory(newList);
+                                                return newList;
+                                            });
+                                            if (currentChatId === hist.id) handleNewChat();
+                                        }}
+                                        title="削除"
+                                    >
+                                        <Trash2 size={12} />
+                                    </button>
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+            </div>
+
             {/* ヘッダー */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-gray-800/50">
                 <div className="flex items-center gap-3">
+                    {/* メイン側の Menu アイコン */}
+                    <button
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        className={`p-1.5 rounded transition-colors ${isSidebarOpen ? 'bg-gray-700 text-white opacity-0 pointer-events-none' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                        title="履歴を表示/非表示"
+                    >
+                        <Menu size={20} />
+                    </button>
+                    
                     <div className="flex items-center gap-2 text-gray-200">
                         <Bot size={20} className="text-blue-400" />
                         <span className="font-bold text-base whitespace-nowrap">AI Assistant</span>

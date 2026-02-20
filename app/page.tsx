@@ -544,7 +544,10 @@ export default function Home() {
                     <div className="h-8 w-px bg-gray-600" />
                   </PanelResizeHandle>
                   <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
-                    <AiPanel editorContent={activeTab?.content || ""} />
+                    <AiPanel
+                      editorContent={activeTab?.content || ""}
+                      currentFilePath={activeTab?.filePath || null}
+                    />
                   </Panel>
                 </>
               )}

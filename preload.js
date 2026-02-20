@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
     showContextMenu: () => ipcRenderer.send('show-context-menu'),
     uiReady: () => ipcRenderer.send('ui-ready'),
+    loadChatHistory: () => ipcRenderer.invoke('chat:loadHistory'),
+    saveChatHistory: (history) => ipcRenderer.invoke('chat:saveHistory', history),
     on: (channel, callback) => {
         const subscription = (event, ...args) => callback(...args);
         ipcRenderer.on(channel, subscription);

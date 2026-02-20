@@ -205,6 +205,32 @@ ipcMain.handle('shell:openExternal', async (event, url) => {
     return false;
 });
 
+// --- Chat History IPC ---
+const CHAT_HISTORY_FILE = path.join(app.getPath('userData'), 'chat_history.json');
+
+ipcMain.handle('chat:loadHistory', async () => {
+    try {
+        const data = await fs.readFile(CHAT_HISTORY_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        if (error.code === 'ENOENT') {
+            return []; // ファイルがない場合は空配列
+        }
+        console.error('Failed to load chat history:', error);
+        return [];
+    }
+});
+
+ipcMain.handle('chat:saveHistory', async (event, history) => {
+    try {
+        await fs.writeFile(CHAT_HISTORY_FILE, JSON.stringify(history), 'utf8');
+        return true;
+    } catch (error) {
+        console.error('Failed to save chat history:', error);
+        return false;
+    }
+});
+
 // 環境変数またはadditionalDataからファイルパスを取得（npmラッパー対策）
 // process.argv は npm run 経由だと握りつぶされるため使用しない
 function getFilePathFromEnvOrData(envFile, additionalData) {
