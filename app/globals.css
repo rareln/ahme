@@ -5,56 +5,463 @@
    ========================================================= */
 
 /*  デフォルト (AHMEテーマ) の色設定 */
-:root, .theme-AHME {
-  
-  --theme-base-bg: #111827;                /* 背景色（Tailwindの bg-ahme-bg になります） */
-  --theme-panel-bg: #1f2937;               /* パネル背景色（Tailwindの bg-ahme-panel になります） */
-  --theme-editor-bg: #1d1d1e;              /* Monacoエディタの背景色 */
-  --theme-editor-margin: #1f2937;          /* Monacoエディタの行番号エリア背景色 */
-  --theme-editor-text: #E0E0E0;            /* Monacoエディタの文字色 */
-  --theme-header-bg: #1f2937;              /* 上部メニューバー */
-  --theme-tabbar-bg: #111827;              /* タブバー */
-  --theme-statusbar-bg: #1f2937;           /* 最下部ステータスバー */
-  --theme-border: #374151; /* 境界線 */   
+:root,
+.theme-AHME {
+
+  --theme-base-bg: #111827;
+  /* 背景色（Tailwindの bg-ahme-bg になります） */
+  --theme-panel-bg: #1f2937;
+  /* パネル背景色（Tailwindの bg-ahme-panel になります） */
+  --theme-editor-bg: #1d1d1e;
+  /* Monacoエディタの背景色 */
+  --theme-editor-margin: #1f2937;
+  /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #E0E0E0;
+  /* Monacoエディタの文字色 */
+  --theme-header-bg: #1f2937;
+  /* 上部メニューバー */
+  --theme-tabbar-bg: #111827;
+  /* タブバー */
+  --theme-statusbar-bg: #1f2937;
+  /* 最下部ステータスバー */
+  --theme-border: #374151;
+  /* 境界線 */
+
+  /* --- 7-1. プライマリカラー（ボタン・アクセント） --- */
+  --theme-primary: #2563eb;
+  /* ボタン背景、送信ボタン (blue-600) */
+  --theme-primary-hover: #3b82f6;
+  /* ボタンホバー (blue-500) */
+  --theme-primary-muted: rgba(30, 58, 138, 0.3);
+  /* 薄いアクセント背景 (blue-900/30) */
+  --theme-primary-text: #60a5fa;
+  /* アクセントテキスト (blue-400) */
+  --theme-primary-ring: #3b82f6;
+  /* フォーカスリング (blue-500) */
+
+  /* --- 7-2. テキストカラー --- */
+  --theme-text-primary: #e5e7eb;
+  /* メインテキスト (gray-200) */
+  --theme-text-secondary: #d1d5db;
+  /* サブテキスト (gray-300) */
+  --theme-text-muted: #9ca3af;
+  /* 控えめテキスト (gray-400) */
+  --theme-text-faint: #6b7280;
+  /* 薄いテキスト (gray-500) */
+
+  /* --- 7-3. サーフェスカラー（カード・チップ背景） --- */
+  --theme-surface: #1f2937;
+  /* カード背景 (gray-800) */
+  --theme-surface-hover: #374151;
+  /* ホバー (gray-700) */
+  --theme-surface-border: #374151;
+  /* ボーダー (gray-700) */
+  --theme-surface-secondary: #111827;
+  /* 二次背景 (gray-900) */
+
+  /* --- 7-4. AIトグル --- */
+  --theme-toggle-on: #65a30d;
+  /* ON状態 (lime-600) */
+  --theme-toggle-off: rgba(54, 83, 20, 0.6);
+  /* OFF状態 (lime-900/60) */
+
+  /* --- 7-5. アクティブタブ --- */
+  --theme-tab-active-bg: #374151;
+  /* アクティブタブ背景 (gray-700) */
+  --theme-tab-active-text: #60a5fa;
+  /* アクティブタブ文字 (blue-400) */
+  --theme-tab-accent: #3b82f6;
+  /* アクセントライン (blue-500) */
+
+  /* --- 7-6. ステータスカラー --- */
+  --theme-success: #059669;
+  /* 成功 (emerald-600) */
+  --theme-success-text: #34d399;
+  /* 成功テキスト (emerald-400) */
+  --theme-success-muted: rgba(5, 150, 105, 0.2);
+  /* 成功薄背景 */
+  --theme-success-border: rgba(16, 185, 129, 0.3);
+  /* 成功ボーダー */
+  --theme-warning-text: #fbbf24;
+  /* 警告テキスト (amber-400) */
+  --theme-warning-muted: rgba(120, 53, 15, 0.2);
+  /* 警告薄背景 (amber-900/20) */
+  --theme-warning-border: rgba(180, 83, 9, 0.4);
+  /* 警告ボーダー (amber-700/40) */
+  --theme-error: #dc2626;
+  /* エラー (red-600) */
+  --theme-error-text: #f87171;
+  /* エラーテキスト (red-400) */
+  --theme-error-muted: rgba(127, 29, 29, 0.2);
+  /* エラー薄背景 (red-900/20) */
+  --theme-error-border: rgba(153, 27, 27, 0.5);
+  /* エラーボーダー (red-800/50) */
+
+  /* --- 7-7. 挿入確認済 --- */
+  --theme-confirm-text: #4ade80;
+  /* 確認済テキスト (green-400) */
+  --theme-confirm-muted: rgba(34, 197, 94, 0.2);
+  /* 確認済背景 (green-500/20) */
+  --theme-confirm-border: rgba(34, 197, 94, 0.3);
+  /* 確認済ボーダー (green-500/30) */
+
+  /* --- 7-8. コードブロック --- */
+  --theme-codeblock-bg: #0d1117;
+  /* コードブロック背景 */
+  --theme-codeblock-header: rgba(31, 41, 55, 0.8);
+  /* ヘッダー背景 (gray-800/80) */
+
+  /* --- 7-9. 入力フィールド --- */
+  --theme-input-bg: #1f2937;
+  /* 入力欄背景 (gray-800) */
+  --theme-input-border: #374151;
+  /* 入力欄ボーダー (gray-700) */
+  --theme-input-focus-ring: #3b82f6;
+  /* フォーカスリング (blue-500) */
+
+  /* --- 7-10. 区切り線 --- */
+  --theme-divider: rgba(107, 114, 128, 0.5);
+  /* 区切り線 (gray-500/50) */
+
+  /* --- 7-11. リサイザー --- */
+  --theme-resizer: #1f2937;
+  /* パネルリサイザー (gray-800) */
+  --theme-resizer-hover: #2563eb;
+  /* リサイザーホバー (blue-600) */
+  --theme-resizer-handle: #4b5563;
+  /* ハンドルライン (gray-600) */
+
+  /* --- 7-12. AIチャット固有 --- */
+  --theme-chat-assistant-bg: rgba(31, 41, 55, 0.3);
+  /* アシスタントメッセージ背景 (gray-800/30) */
+  --theme-chat-assistant-icon: #2563eb;
+  /* アイコン背景 (blue-600) */
+  --theme-chat-user-icon: #4b5563;
+  /* ユーザーアイコン背景 (gray-600) */
+  --theme-chat-streaming: #3b82f6;
+  /* ストリーミングボーダー (blue-500) */
+  --theme-chat-link: #60a5fa;
+  /* リンク色 (blue-400) */
+  --theme-chat-link-hover: #93c5fd;
+  /* リンクホバー (blue-300) */
+  --theme-chat-status-dot: #22c55e;
+  /* ステータスドット (green-500) */
+
+  /* --- 7-13. ダイアログ --- */
+  --theme-dialog-bg: #0f0a1e;
+  /* ダイアログ背景 */
+  --theme-dialog-title: #ede9fe;
+  /* タイトル色 (violet-100) */
+  --theme-dialog-border: rgba(76, 29, 149, 0.5);
+  /* ダイアログボーダー (violet-900/50) */
+  --theme-dialog-input-bg: #374151;
+  /* 入力フィールド (gray-700) */
+  --theme-dialog-input-border: #4b5563;
+  /* 入力ボーダー (gray-600) */
+  --theme-dialog-focus: #8b5cf6;
+  /* フォーカス色 (violet-500) */
+  --theme-dialog-btn: #7c3aed;
+  /* 主ボタン (violet-600) */
+  --theme-dialog-btn-hover: #8b5cf6;
+  /* 主ボタンホバー (violet-500) */
+  --theme-dialog-btn-muted: rgba(76, 29, 149, 0.4);
+  /* 控えめボタン (violet-900/40) */
+
+  /* --- 7-14. 画像プレビュー --- */
+  --theme-image-chip-bg: rgba(76, 29, 149, 0.2);
+  /* 画像チップ背景 (violet-900/20) */
+  --theme-image-chip-border: rgba(109, 40, 217, 0.4);
+  /* チップボーダー (violet-700/40) */
+  --theme-image-chip-text: #c4b5fd;
+  /* チップテキスト (violet-300) */
 }
 
 /* 🌑 ダークテーマ (Dark) の色設定 */
 .theme-dark {
-  --theme-base-bg: #161010;               /* 背景色（Tailwindの bg-ahme-bg になります） */
-  --theme-panel-bg: #0d0808;              /* パネル背景色（Tailwindの bg-ahme-panel になります） */
-  --theme-editor-bg: #1b1a1a;             /* Monacoエディタの背景色 */
-  --theme-editor-margin: #333333;         /* Monacoエディタの行番号エリア背景色 */
-  --theme-editor-text: #d4d4d4;           /* Monacoエディタの文字色 */
-  --theme-header-bg: #333333;             /* 上部メニューバー */
-  --theme-tabbar-bg: #252526;             /* タブバー */
-  --theme-statusbar-bg: #333333;          /* 最下部ステータスバー */
-  --theme-border: #444444;                /* 境界線 */ 
+  --theme-base-bg: #161010;
+  /* 背景色 */
+  --theme-panel-bg: #0d0808;
+  /* パネル背景色 */
+  --theme-editor-bg: #1b1a1a;
+  /* Monacoエディタの背景色 */
+  --theme-editor-margin: #333333;
+  /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #d4d4d4;
+  /* Monacoエディタの文字色 */
+  --theme-header-bg: #333333;
+  /* 上部メニューバー */
+  --theme-tabbar-bg: #252526;
+  /* タブバー */
+  --theme-statusbar-bg: #333333;
+  /* 最下部ステータスバー */
+  --theme-border: #444444;
+  /* 境界線 */
+
+  --theme-primary: #1d4ed8;
+  --theme-primary-hover: #2563eb;
+  --theme-primary-muted: rgba(30, 58, 138, 0.25);
+  --theme-primary-text: #60a5fa;
+  --theme-primary-ring: #3b82f6;
+
+  --theme-text-primary: #d4d4d4;
+  --theme-text-secondary: #b0b0b0;
+  --theme-text-muted: #808080;
+  --theme-text-faint: #606060;
+
+  --theme-surface: #2a2a2a;
+  --theme-surface-hover: #3a3a3a;
+  --theme-surface-border: #444444;
+  --theme-surface-secondary: #1a1a1a;
+
+  --theme-toggle-on: #65a30d;
+  --theme-toggle-off: rgba(54, 83, 20, 0.6);
+
+  --theme-tab-active-bg: #3a3a3a;
+  --theme-tab-active-text: #60a5fa;
+  --theme-tab-accent: #3b82f6;
+
+  --theme-success: #059669;
+  --theme-success-text: #34d399;
+  --theme-success-muted: rgba(5, 150, 105, 0.2);
+  --theme-success-border: rgba(16, 185, 129, 0.3);
+  --theme-warning-text: #fbbf24;
+  --theme-warning-muted: rgba(120, 53, 15, 0.2);
+  --theme-warning-border: rgba(180, 83, 9, 0.4);
+  --theme-error: #dc2626;
+  --theme-error-text: #f87171;
+  --theme-error-muted: rgba(127, 29, 29, 0.2);
+  --theme-error-border: rgba(153, 27, 27, 0.5);
+
+  --theme-confirm-text: #4ade80;
+  --theme-confirm-muted: rgba(34, 197, 94, 0.2);
+  --theme-confirm-border: rgba(34, 197, 94, 0.3);
+
+  --theme-codeblock-bg: #0d0d0d;
+  --theme-codeblock-header: rgba(42, 42, 42, 0.8);
+
+  --theme-input-bg: #2a2a2a;
+  --theme-input-border: #444444;
+  --theme-input-focus-ring: #3b82f6;
+
+  --theme-divider: rgba(100, 100, 100, 0.5);
+
+  --theme-resizer: #2a2a2a;
+  --theme-resizer-hover: #1d4ed8;
+  --theme-resizer-handle: #555555;
+
+  --theme-chat-assistant-bg: rgba(42, 42, 42, 0.3);
+  --theme-chat-assistant-icon: #1d4ed8;
+  --theme-chat-user-icon: #555555;
+  --theme-chat-streaming: #3b82f6;
+  --theme-chat-link: #60a5fa;
+  --theme-chat-link-hover: #93c5fd;
+  --theme-chat-status-dot: #22c55e;
+
+  --theme-dialog-bg: #1a1a1a;
+  --theme-dialog-title: #e0e0e0;
+  --theme-dialog-border: #444444;
+  --theme-dialog-input-bg: #2a2a2a;
+  --theme-dialog-input-border: #555555;
+  --theme-dialog-focus: #3b82f6;
+  --theme-dialog-btn: #1d4ed8;
+  --theme-dialog-btn-hover: #2563eb;
+  --theme-dialog-btn-muted: rgba(30, 58, 138, 0.4);
+
+  --theme-image-chip-bg: rgba(30, 58, 138, 0.2);
+  --theme-image-chip-border: rgba(37, 99, 235, 0.4);
+  --theme-image-chip-text: #93c5fd;
 }
 
 /* ☀️ ライトテーマ (Light) の色設定 */
 .theme-light {
-  --theme-base-bg: #f3f4f6;              /* 背景色（Tailwindの bg-ahme-bg になります） */
-  --theme-panel-bg: #ffffff;             /* パネル背景色（Tailwindの bg-ahme-panel になります） */
-  --theme-editor-bg: #ffffff;            /* Monacoエディタの背景色 */
-  --theme-editor-margin: #f3f4f6;        /* Monacoエディタの行番号エリア背景色 */
-  --theme-editor-text: #333333;          /* Monacoエディタの文字色 */
-  --theme-header-bg: #e5e7eb;            /* 上部メニューバー */
-  --theme-tabbar-bg: #f9fafb;            /* タブバー */
-  --theme-statusbar-bg: #212222;         /* 最下部ステータスバー */
-  --theme-border: #d1d5db;               /* 境界線 */
+  --theme-base-bg: #f3f4f6;
+  /* 背景色 */
+  --theme-panel-bg: #ffffff;
+  /* パネル背景色 */
+  --theme-editor-bg: #ffffff;
+  /* Monacoエディタの背景色 */
+  --theme-editor-margin: #f3f4f6;
+  /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #333333;
+  /* Monacoエディタの文字色 */
+  --theme-header-bg: #e5e7eb;
+  /* 上部メニューバー */
+  --theme-tabbar-bg: #f9fafb;
+  /* タブバー */
+  --theme-statusbar-bg: #212222;
+  /* 最下部ステータスバー */
+  --theme-border: #d1d5db;
+  /* 境界線 */
+
+  --theme-primary: #2563eb;
+  --theme-primary-hover: #1d4ed8;
+  --theme-primary-muted: rgba(191, 219, 254, 0.4);
+  --theme-primary-text: #1d4ed8;
+  --theme-primary-ring: #2563eb;
+
+  --theme-text-primary: #1f2937;
+  --theme-text-secondary: #374151;
+  --theme-text-muted: #6b7280;
+  --theme-text-faint: #9ca3af;
+
+  --theme-surface: #e5e7eb;
+  --theme-surface-hover: #d1d5db;
+  --theme-surface-border: #d1d5db;
+  --theme-surface-secondary: #f3f4f6;
+
+  --theme-toggle-on: #65a30d;
+  --theme-toggle-off: rgba(190, 242, 100, 0.3);
+
+  --theme-tab-active-bg: #ffffff;
+  --theme-tab-active-text: #2563eb;
+  --theme-tab-accent: #2563eb;
+
+  --theme-success: #059669;
+  --theme-success-text: #059669;
+  --theme-success-muted: rgba(209, 250, 229, 0.6);
+  --theme-success-border: rgba(16, 185, 129, 0.4);
+  --theme-warning-text: #d97706;
+  --theme-warning-muted: rgba(254, 243, 199, 0.6);
+  --theme-warning-border: rgba(217, 119, 6, 0.4);
+  --theme-error: #dc2626;
+  --theme-error-text: #dc2626;
+  --theme-error-muted: rgba(254, 226, 226, 0.6);
+  --theme-error-border: rgba(220, 38, 38, 0.3);
+
+  --theme-confirm-text: #16a34a;
+  --theme-confirm-muted: rgba(187, 247, 208, 0.5);
+  --theme-confirm-border: rgba(22, 163, 74, 0.3);
+
+  --theme-codeblock-bg: #f8f9fa;
+  --theme-codeblock-header: rgba(229, 231, 235, 0.8);
+
+  --theme-input-bg: #ffffff;
+  --theme-input-border: #d1d5db;
+  --theme-input-focus-ring: #2563eb;
+
+  --theme-divider: rgba(156, 163, 175, 0.5);
+
+  --theme-resizer: #e5e7eb;
+  --theme-resizer-hover: #2563eb;
+  --theme-resizer-handle: #9ca3af;
+
+  --theme-chat-assistant-bg: rgba(243, 244, 246, 0.5);
+  --theme-chat-assistant-icon: #2563eb;
+  --theme-chat-user-icon: #9ca3af;
+  --theme-chat-streaming: #2563eb;
+  --theme-chat-link: #2563eb;
+  --theme-chat-link-hover: #1d4ed8;
+  --theme-chat-status-dot: #16a34a;
+
+  --theme-dialog-bg: #ffffff;
+  --theme-dialog-title: #1f2937;
+  --theme-dialog-border: #d1d5db;
+  --theme-dialog-input-bg: #f3f4f6;
+  --theme-dialog-input-border: #d1d5db;
+  --theme-dialog-focus: #2563eb;
+  --theme-dialog-btn: #2563eb;
+  --theme-dialog-btn-hover: #1d4ed8;
+  --theme-dialog-btn-muted: rgba(191, 219, 254, 0.4);
+
+  --theme-image-chip-bg: rgba(224, 231, 255, 0.5);
+  --theme-image-chip-border: rgba(99, 102, 241, 0.3);
+  --theme-image-chip-text: #4f46e5;
 }
 
 /* ⬛ ハイコントラスト (High Contrast) の色設定 */
 .theme-hc {
-  --theme-base-bg: #000000;              /* 背景色（Tailwindの bg-ahme-bg になります） */
-  --theme-panel-bg: #000000;             /* パネル背景色（Tailwindの bg-ahme-panel になります） */
-  --theme-editor-bg: #000000;            /* Monacoエディタの背景色 */
-  --theme-editor-margin: #000000;        /* Monacoエディタの行番号エリア背景色 */
-  --theme-editor-text: #ffffff;          /* Monacoエディタの文字色 */
-  --theme-header-bg: #000000;            /* 上部メニューバー */
-  --theme-tabbar-bg: #000000;            /* タブバー */
-  --theme-statusbar-bg: #000000;         /* 最下部ステータスバー */
-  --theme-border: #ffffff;               /* 境界線 */
+  --theme-base-bg: #000000;
+  /* 背景色 */
+  --theme-panel-bg: #000000;
+  /* パネル背景色 */
+  --theme-editor-bg: #000000;
+  /* Monacoエディタの背景色 */
+  --theme-editor-margin: #000000;
+  /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #ffffff;
+  /* Monacoエディタの文字色 */
+  --theme-header-bg: #000000;
+  /* 上部メニューバー */
+  --theme-tabbar-bg: #000000;
+  /* タブバー */
+  --theme-statusbar-bg: #000000;
+  /* 最下部ステータスバー */
+  --theme-border: #ffffff;
+  /* 境界線 */
+
+  --theme-primary: #4da6ff;
+  --theme-primary-hover: #80bfff;
+  --theme-primary-muted: rgba(0, 100, 200, 0.3);
+  --theme-primary-text: #4da6ff;
+  --theme-primary-ring: #4da6ff;
+
+  --theme-text-primary: #ffffff;
+  --theme-text-secondary: #e0e0e0;
+  --theme-text-muted: #c0c0c0;
+  --theme-text-faint: #a0a0a0;
+
+  --theme-surface: #1a1a1a;
+  --theme-surface-hover: #333333;
+  --theme-surface-border: #ffffff;
+  --theme-surface-secondary: #0a0a0a;
+
+  --theme-toggle-on: #84cc16;
+  --theme-toggle-off: rgba(63, 98, 18, 0.8);
+
+  --theme-tab-active-bg: #1a1a1a;
+  --theme-tab-active-text: #4da6ff;
+  --theme-tab-accent: #4da6ff;
+
+  --theme-success: #00ff7f;
+  --theme-success-text: #00ff7f;
+  --theme-success-muted: rgba(0, 255, 127, 0.15);
+  --theme-success-border: rgba(0, 255, 127, 0.5);
+  --theme-warning-text: #ffff00;
+  --theme-warning-muted: rgba(255, 255, 0, 0.1);
+  --theme-warning-border: rgba(255, 255, 0, 0.5);
+  --theme-error: #ff4444;
+  --theme-error-text: #ff4444;
+  --theme-error-muted: rgba(255, 68, 68, 0.15);
+  --theme-error-border: rgba(255, 68, 68, 0.5);
+
+  --theme-confirm-text: #00ff7f;
+  --theme-confirm-muted: rgba(0, 255, 127, 0.15);
+  --theme-confirm-border: rgba(0, 255, 127, 0.5);
+
+  --theme-codeblock-bg: #0a0a0a;
+  --theme-codeblock-header: rgba(26, 26, 26, 0.9);
+
+  --theme-input-bg: #000000;
+  --theme-input-border: #ffffff;
+  --theme-input-focus-ring: #4da6ff;
+
+  --theme-divider: rgba(255, 255, 255, 0.5);
+
+  --theme-resizer: #1a1a1a;
+  --theme-resizer-hover: #4da6ff;
+  --theme-resizer-handle: #ffffff;
+
+  --theme-chat-assistant-bg: rgba(26, 26, 26, 0.5);
+  --theme-chat-assistant-icon: #4da6ff;
+  --theme-chat-user-icon: #808080;
+  --theme-chat-streaming: #4da6ff;
+  --theme-chat-link: #4da6ff;
+  --theme-chat-link-hover: #80bfff;
+  --theme-chat-status-dot: #00ff7f;
+
+  --theme-dialog-bg: #000000;
+  --theme-dialog-title: #ffffff;
+  --theme-dialog-border: #ffffff;
+  --theme-dialog-input-bg: #1a1a1a;
+  --theme-dialog-input-border: #ffffff;
+  --theme-dialog-focus: #4da6ff;
+  --theme-dialog-btn: #4da6ff;
+  --theme-dialog-btn-hover: #80bfff;
+  --theme-dialog-btn-muted: rgba(0, 100, 200, 0.4);
+
+  --theme-image-chip-bg: rgba(0, 100, 200, 0.2);
+  --theme-image-chip-border: rgba(77, 166, 255, 0.4);
+  --theme-image-chip-text: #80bfff;
 }
 
 /* =========================================================
@@ -70,6 +477,81 @@
   --color-ahme-tabbar: var(--theme-tabbar-bg);
   --color-ahme-statusbar: var(--theme-statusbar-bg);
   --color-ahme-border: var(--theme-border);
+
+  /* 7. アプリ全共通カラー */
+  --color-ahme-primary: var(--theme-primary);
+  --color-ahme-primary-hover: var(--theme-primary-hover);
+  --color-ahme-primary-muted: var(--theme-primary-muted);
+  --color-ahme-primary-text: var(--theme-primary-text);
+  --color-ahme-primary-ring: var(--theme-primary-ring);
+
+  --color-ahme-text-primary: var(--theme-text-primary);
+  --color-ahme-text-secondary: var(--theme-text-secondary);
+  --color-ahme-text-muted: var(--theme-text-muted);
+  --color-ahme-text-faint: var(--theme-text-faint);
+
+  --color-ahme-surface: var(--theme-surface);
+  --color-ahme-surface-hover: var(--theme-surface-hover);
+  --color-ahme-surface-border: var(--theme-surface-border);
+  --color-ahme-surface-secondary: var(--theme-surface-secondary);
+
+  --color-ahme-toggle-on: var(--theme-toggle-on);
+  --color-ahme-toggle-off: var(--theme-toggle-off);
+
+  --color-ahme-tab-active-bg: var(--theme-tab-active-bg);
+  --color-ahme-tab-active-text: var(--theme-tab-active-text);
+  --color-ahme-tab-accent: var(--theme-tab-accent);
+
+  --color-ahme-success: var(--theme-success);
+  --color-ahme-success-text: var(--theme-success-text);
+  --color-ahme-success-muted: var(--theme-success-muted);
+  --color-ahme-success-border: var(--theme-success-border);
+  --color-ahme-warning-text: var(--theme-warning-text);
+  --color-ahme-warning-muted: var(--theme-warning-muted);
+  --color-ahme-warning-border: var(--theme-warning-border);
+  --color-ahme-error: var(--theme-error);
+  --color-ahme-error-text: var(--theme-error-text);
+  --color-ahme-error-muted: var(--theme-error-muted);
+  --color-ahme-error-border: var(--theme-error-border);
+
+  --color-ahme-confirm-text: var(--theme-confirm-text);
+  --color-ahme-confirm-muted: var(--theme-confirm-muted);
+  --color-ahme-confirm-border: var(--theme-confirm-border);
+
+  --color-ahme-codeblock: var(--theme-codeblock-bg);
+  --color-ahme-codeblock-header: var(--theme-codeblock-header);
+
+  --color-ahme-input: var(--theme-input-bg);
+  --color-ahme-input-border: var(--theme-input-border);
+  --color-ahme-input-focus: var(--theme-input-focus-ring);
+
+  --color-ahme-divider: var(--theme-divider);
+
+  --color-ahme-resizer: var(--theme-resizer);
+  --color-ahme-resizer-hover: var(--theme-resizer-hover);
+  --color-ahme-resizer-handle: var(--theme-resizer-handle);
+
+  --color-ahme-chat-assistant-bg: var(--theme-chat-assistant-bg);
+  --color-ahme-chat-assistant-icon: var(--theme-chat-assistant-icon);
+  --color-ahme-chat-user-icon: var(--theme-chat-user-icon);
+  --color-ahme-chat-streaming: var(--theme-chat-streaming);
+  --color-ahme-chat-link: var(--theme-chat-link);
+  --color-ahme-chat-link-hover: var(--theme-chat-link-hover);
+  --color-ahme-chat-status-dot: var(--theme-chat-status-dot);
+
+  --color-ahme-dialog: var(--theme-dialog-bg);
+  --color-ahme-dialog-title: var(--theme-dialog-title);
+  --color-ahme-dialog-border: var(--theme-dialog-border);
+  --color-ahme-dialog-input: var(--theme-dialog-input-bg);
+  --color-ahme-dialog-input-border: var(--theme-dialog-input-border);
+  --color-ahme-dialog-focus: var(--theme-dialog-focus);
+  --color-ahme-dialog-btn: var(--theme-dialog-btn);
+  --color-ahme-dialog-btn-hover: var(--theme-dialog-btn-hover);
+  --color-ahme-dialog-btn-muted: var(--theme-dialog-btn-muted);
+
+  --color-ahme-image-chip: var(--theme-image-chip-bg);
+  --color-ahme-image-chip-border: var(--theme-image-chip-border);
+  --color-ahme-image-chip-text: var(--theme-image-chip-text);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -120,25 +602,31 @@ body {
 .monaco-editor .line-numbers.active-line-number {
   color: #888888 !important;
 }
+
 .monaco-editor .findMatch {
   background-color: rgba(181, 137, 80, 0.45) !important;
   border: 1px solid rgba(181, 137, 80, 0.6) !important;
 }
+
 .monaco-editor .currentFindMatch {
   background-color: rgba(255, 165, 0, 0.6) !important;
   border: 1px solid rgba(255, 165, 0, 0.9) !important;
 }
+
 .monaco-editor .findMatchInPeekEditor,
 .monaco-editor .rangeHighlight {
   background-color: rgba(174, 238, 80, 0.45) !important;
   border: 1px solid rgba(174, 238, 80, 0.7) !important;
 }
+
 .monaco-editor .inputarea {
   opacity: 0.01 !important;
 }
+
 .monaco-editor .selected-text {
   background-color: #0078d4 !important;
 }
+
 .monaco-editor.focused .selected-text {
   background-color: #0078d4 !important;
 }
@@ -150,17 +638,21 @@ body {
   width: 12px;
   height: 12px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--theme-editor-margin);
 }
+
 ::-webkit-scrollbar-corner {
   background: var(--theme-editor-margin);
 }
+
 ::-webkit-scrollbar-thumb {
   background-color: #4b5563;
   border-radius: 6px;
   border: 3px solid var(--theme-editor-margin);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background-color: #6b7280;
 }

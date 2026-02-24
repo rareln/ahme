@@ -28,12 +28,12 @@ interface SettingsDialogProps {
 /** 共通の入力フィールドスタイル */
 const inputClassName =
     "w-full rounded px-3 py-1.5 text-sm border focus:outline-none " +
-    "bg-gray-700 text-white border-gray-600 focus:border-violet-500";
+    "bg-ahme-dialog-input text-white border-ahme-dialog-input-border focus:border-ahme-dialog-focus";
 
 /** select要素用スタイル（ドロップダウンの背景色も統一） */
 const selectClassName =
     inputClassName +
-    " appearance-none [&>option]:bg-gray-700 [&>option]:text-white";
+    " appearance-none [&>option]:bg-ahme-dialog-input [&>option]:text-white";
 
 /** 設定ダイアログ（全ラベル日本語） */
 export default function SettingsDialog({
@@ -58,12 +58,12 @@ export default function SettingsDialog({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-            <div className="bg-[#0f0a1e] border border-violet-900/50 rounded-lg shadow-2xl w-[420px] p-6">
-                <h2 className="text-lg font-bold text-violet-100 mb-4">⚙️ 設定 (Generate)</h2>
+            <div className="bg-ahme-dialog border border-ahme-dialog-border rounded-lg shadow-2xl w-[420px] p-6">
+                <h2 className="text-lg font-bold text-ahme-dialog-title mb-4">⚙️ 設定</h2>
 
                 {/* フォントサイズ */}
                 <div className="mb-4">
-                    <label className="block text-sm text-gray-300 mb-1">フォントサイズ</label>
+                    <label className="block text-sm text-ahme-text-secondary mb-1">フォントサイズ</label>
                     <input
                         type="number"
                         min={10}
@@ -78,7 +78,7 @@ export default function SettingsDialog({
 
                 {/* テーマ */}
                 <div className="mb-4">
-                    <label className="block text-sm text-gray-300 mb-1">テーマ</label>
+                    <label className="block text-sm text-ahme-text-secondary mb-1">テーマ</label>
                     <select
                         value={localSettings.theme}
                         onChange={(e) =>
@@ -98,7 +98,7 @@ export default function SettingsDialog({
 
                 {/* 行の折り返し */}
                 <div className="mb-4">
-                    <label className="block text-sm text-gray-300 mb-1">行の折り返し</label>
+                    <label className="block text-sm text-ahme-text-secondary mb-1">行の折り返し</label>
                     <select
                         value={localSettings.wordWrap}
                         onChange={(e) =>
@@ -116,7 +116,7 @@ export default function SettingsDialog({
 
                 {/* タブサイズ */}
                 <div className="mb-6">
-                    <label className="block text-sm text-gray-300 mb-1">タブサイズ</label>
+                    <label className="block text-sm text-ahme-text-secondary mb-1">タブサイズ</label>
                     <input
                         type="number"
                         min={2}
@@ -133,13 +133,13 @@ export default function SettingsDialog({
                 <div className="flex justify-end gap-2">
                     <button
                         onClick={onClose}
-                        className="px-4 py-1.5 text-sm text-gray-300 hover:text-white rounded hover:bg-violet-900/40 transition-colors"
+                        className="px-4 py-1.5 text-sm text-ahme-text-secondary hover:text-white rounded hover:bg-ahme-dialog-btn-muted transition-colors"
                     >
                         キャンセル
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-4 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded transition-colors"
+                        className="px-4 py-1.5 text-sm bg-ahme-dialog-btn hover:bg-ahme-dialog-btn-hover text-white rounded transition-colors"
                     >
                         保存
                     </button>

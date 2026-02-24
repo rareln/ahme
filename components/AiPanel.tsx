@@ -148,7 +148,7 @@ function renderTextWithLinks(text: string, fontSize: number): React.ReactNode[] 
                     key={i}
                     href={part}
                     onClick={handleClick}
-                    className="text-blue-400 underline hover:text-blue-300 cursor-pointer break-all"
+                    className="text-ahme-chat-link underline hover:text-ahme-chat-link-hover cursor-pointer break-all"
                     title={part}
                 >
                     {part}
@@ -179,16 +179,16 @@ function CodeBlockWithInsert({
     };
 
     return (
-        <div className="relative group my-2 rounded-lg overflow-hidden border border-gray-700/50">
-            <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800/80 border-b border-gray-700/50">
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-mono">
+        <div className="relative group my-2 rounded-lg overflow-hidden border border-ahme-surface-border/50">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-ahme-codeblock-header border-b border-ahme-surface-border/50">
+                <span className="text-[10px] text-ahme-text-faint uppercase tracking-wider font-mono">
                     {language || "code"}
                 </span>
                 <button
                     onClick={handleInsert}
                     className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all duration-200 ${inserted
-                        ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                        : "bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 hover:shadow-[0_0_8px_rgba(59,130,246,0.15)]"
+                        ? "bg-ahme-confirm-muted text-ahme-confirm-text border border-ahme-confirm-border"
+                        : "bg-ahme-primary-muted/30 text-ahme-primary-text border border-ahme-primary-muted/50 hover:bg-ahme-primary-muted/60 hover:border-ahme-primary-muted"
                         }`}
                     title="エディタのカーソル位置に挿入（ハイライト付き）"
                 >
@@ -200,10 +200,10 @@ function CodeBlockWithInsert({
                 </button>
             </div>
             <pre
-                className="p-3 bg-[#0d1117] overflow-x-auto scrollbar-thin scrollbar-thumb-gray-700"
+                className="p-3 bg-ahme-codeblock overflow-x-auto scrollbar-thin scrollbar-thumb-ahme-surface-hover"
                 style={{ fontSize: `${Math.max(fontSize - 1, 10)}px` }}
             >
-                <code className="text-gray-300 font-mono leading-relaxed whitespace-pre">
+                <code className="text-ahme-text-secondary font-mono leading-relaxed whitespace-pre">
                     {code}
                 </code>
             </pre>
@@ -224,7 +224,7 @@ function MessageContent({
     const blocks = useMemo(() => parseMessageContent(content), [content]);
 
     return (
-        <div className={isStreaming ? "border-r-2 border-blue-500 animate-pulse" : ""}>
+        <div className={isStreaming ? "border-r-2 border-ahme-chat-streaming animate-pulse" : ""}>
             {blocks.map((block, i) =>
                 block.type === "code" ? (
                     <CodeBlockWithInsert
@@ -236,7 +236,7 @@ function MessageContent({
                 ) : (
                     <div
                         key={i}
-                        className="text-gray-200 leading-relaxed whitespace-pre-wrap"
+                        className="text-ahme-text-primary leading-relaxed whitespace-pre-wrap"
                         style={{ fontSize: `${fontSize}px` }}
                     >
                         {renderTextWithLinks(block.content, fontSize)}
@@ -346,8 +346,8 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
             <button
                 onClick={handleInsert}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold
-                           bg-emerald-600 text-white shadow-lg border border-emerald-400
-                           hover:bg-emerald-500 transition-all cursor-pointer animate-in fade-in zoom-in duration-150"
+                           bg-ahme-success text-white shadow-lg border border-ahme-success-text
+                           hover:bg-ahme-success-text transition-all cursor-pointer animate-in fade-in zoom-in duration-150"
                 title="選択テキストをエディタのカーソル位置に挿入"
             >
                 <span>📝</span> エディタに挿入
@@ -374,12 +374,12 @@ function AttachmentChip({
     return (
         <div
             className={`flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-md text-[11px] border transition-all duration-200 ${file.error
-                ? "bg-red-900/20 border-red-700/40 text-red-400"
+                ? "bg-ahme-error-muted border-ahme-error-border text-ahme-error-text"
                 : file.isParsing
-                    ? "bg-blue-900/20 border-blue-700/40 text-blue-400"
+                    ? "bg-ahme-primary-muted border-ahme-primary-muted/60 text-ahme-primary-text"
                     : file.truncated
-                        ? "bg-amber-900/20 border-amber-700/40 text-amber-400"
-                        : "bg-gray-800/80 border-gray-600/40 text-gray-300"
+                        ? "bg-ahme-warning-muted border-ahme-warning-border text-ahme-warning-text"
+                        : "bg-ahme-surface/80 border-ahme-surface-border/40 text-ahme-text-secondary"
                 }`}
         >
             {file.isParsing ? (
@@ -394,14 +394,14 @@ function AttachmentChip({
                 {formatFileSize(file.size)}
             </span>
             {file.truncated && (
-                <span className="text-[9px] text-amber-500" title="テキストが切り詰められました">⚠</span>
+                <span className="text-[9px] text-ahme-warning-text" title="テキストが切り詰められました">⚠</span>
             )}
             {file.error && (
-                <span className="text-[9px] text-red-400" title={file.error}>⚠</span>
+                <span className="text-[9px] text-ahme-error-text" title={file.error}>⚠</span>
             )}
             <button
                 onClick={() => onRemove(file.id)}
-                className="p-0.5 rounded hover:bg-gray-600/50 transition-colors shrink-0"
+                className="p-0.5 rounded hover:bg-ahme-surface-hover/50 transition-colors shrink-0"
                 title="添付を取り消し"
             >
                 <X size={12} />
@@ -1002,29 +1002,29 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     const totalAttachments = successFiles.length + attachedImages.length;
 
     return (
-        <div className="flex flex-col h-full bg-[#111827] border-l border-gray-700 text-sm overflow-hidden relative">
+        <div className="flex flex-col h-full bg-ahme-bg border-l border-ahme-surface-border text-sm overflow-hidden relative">
             {/* 履歴サイドバー */}
-            <div className={`absolute top-0 left-0 h-full bg-gray-900 border-r border-gray-700 z-50 transition-transform duration-300 w-64 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="flex items-center justify-between p-3 border-b border-gray-700">
+            <div className={`absolute top-0 left-0 h-full bg-ahme-surface-secondary border-r border-ahme-surface-border z-50 transition-transform duration-300 w-64 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="flex items-center justify-between p-3 border-b border-ahme-surface-border">
                     <div className="flex items-center gap-2">
                         {/* サイドバー側にも三本線ボタンを配置 */}
-                        <button 
-                            onClick={() => setIsSidebarOpen(false)} 
-                            className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors" 
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="p-1.5 hover:bg-ahme-surface-hover rounded text-ahme-text-muted hover:text-white transition-colors"
                             title="履歴を閉じる"
                         >
                             <Menu size={20} />
                         </button>
-                        <span className="font-bold text-gray-200">チャット履歴</span>
+                        <span className="font-bold text-ahme-text-primary">チャット履歴</span>
                     </div>
                     {/* 新規チャットボタン（右寄せ） */}
-                    <button onClick={handleNewChat} className="p-1 hover:bg-gray-700 rounded text-gray-300" title="新しいチャット">
+                    <button onClick={handleNewChat} className="p-1 hover:bg-ahme-surface-hover rounded text-ahme-text-secondary" title="新しいチャット">
                         <span className="text-xl leading-none block">+</span>
                     </button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-gray-700">
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-ahme-surface-hover">
                     {sortedHistory.length === 0 ? (
-                        <div className="text-gray-500 text-xs text-center mt-4">履歴はありません</div>
+                        <div className="text-ahme-text-faint text-xs text-center mt-4">履歴はありません</div>
                     ) : (
                         sortedHistory.map(hist => {
                             const isRelated = currentFilePath && hist.relatedFilePath === currentFilePath;
@@ -1034,20 +1034,20 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                     key={hist.id}
                                     onClick={() => handleSelectHistory(hist.id)}
                                     className={`w-full text-left p-2 rounded-md transition-colors text-xs flex items-center justify-between group
-                                        ${isActive ? 'bg-blue-900/30 border border-blue-500/30 text-blue-300'
-                                            : 'hover:bg-gray-800 text-gray-400 border border-transparent'}
+                                        ${isActive ? 'bg-ahme-primary-muted border border-ahme-primary-ring/30 text-ahme-primary-text'
+                                            : 'hover:bg-ahme-surface text-ahme-text-muted border border-transparent'}
                                     `}
                                 >
                                     <div className="flex items-center gap-2 overflow-hidden">
                                         {isRelated ? (
-                                            <span title="現在開いているファイルに関連" className="text-blue-400 shrink-0">📝</span>
+                                            <span title="現在開いているファイルに関連" className="text-ahme-primary-text shrink-0">📝</span>
                                         ) : (
                                             <Bot size={14} className="opacity-50 shrink-0" />
                                         )}
                                         <span className="truncate font-medium">{hist.title}</span>
                                     </div>
                                     <button
-                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-ahme-error-text transition-opacity"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             // 1件削除処理
@@ -1070,25 +1070,25 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             </div>
 
             {/* ヘッダー */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700 bg-gray-800/50">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-ahme-surface-border bg-ahme-surface/50">
                 <div className="flex items-center gap-3">
                     {/* メイン側の Menu アイコン */}
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className={`p-1.5 rounded transition-colors ${isSidebarOpen ? 'bg-gray-700 text-white opacity-0 pointer-events-none' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                        className={`p-1.5 rounded transition-colors ${isSidebarOpen ? 'bg-ahme-surface-hover text-white opacity-0 pointer-events-none' : 'text-ahme-text-muted hover:text-white hover:bg-ahme-surface-hover'}`}
                         title="履歴を表示/非表示"
                     >
                         <Menu size={20} />
                     </button>
-                    
-                    <div className="flex items-center gap-2 text-gray-200">
-                        <Bot size={20} className="text-blue-400" />
+
+                    <div className="flex items-center gap-2 text-ahme-text-primary">
+                        <Bot size={20} className="text-ahme-primary-text" />
                         <span className="font-bold text-base whitespace-nowrap">AI Assistant</span>
                     </div>
-                    <div className="flex items-center gap-2 bg-gray-900/50 px-3 py-1.5 rounded border border-gray-700">
-                        <button onClick={() => setFontSize(Math.max(10, fontSize - 1))} className="text-gray-400 hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を小さく">-</button>
-                        <span className="text-sm font-bold text-gray-300 w-6 text-center select-none">{fontSize}</span>
-                        <button onClick={() => setFontSize(Math.min(30, fontSize + 1))} className="text-gray-400 hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を大きく">+</button>
+                    <div className="flex items-center gap-2 bg-ahme-surface-secondary/50 px-3 py-1.5 rounded border border-ahme-surface-border">
+                        <button onClick={() => setFontSize(Math.max(10, fontSize - 1))} className="text-ahme-text-muted hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を小さく">-</button>
+                        <span className="text-sm font-bold text-ahme-text-secondary w-6 text-center select-none">{fontSize}</span>
+                        <button onClick={() => setFontSize(Math.min(30, fontSize + 1))} className="text-ahme-text-muted hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を大きく">+</button>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1097,17 +1097,17 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
                             disabled={isLoadingModels}
-                            className="appearance-none w-48 bg-gray-700 text-gray-200 text-sm font-medium px-3 py-2 pr-8 rounded cursor-pointer hover:bg-gray-600 transition-colors border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 truncate disabled:opacity-50"
+                            className="appearance-none w-48 bg-ahme-surface-hover text-ahme-text-primary text-sm font-medium px-3 py-2 pr-8 rounded cursor-pointer hover:bg-ahme-surface transition-colors border border-ahme-surface-border focus:outline-none focus:ring-1 focus:ring-ahme-primary-ring truncate disabled:opacity-50"
                         >
                             {availableModels.map(model => (
                                 <option key={model} value={model}>{model}</option>
                             ))}
                         </select>
-                        <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-ahme-text-muted pointer-events-none" />
                         <button
                             onClick={fetchModels}
                             disabled={isLoadingModels}
-                            className={`p-1 text-gray-400 hover:text-white transition-colors ${isLoadingModels ? "animate-spin" : ""}`}
+                            className={`p-1 text-ahme-text-muted hover:text-white transition-colors ${isLoadingModels ? "animate-spin" : ""}`}
                             title="モデルリストを更新"
                         >
                             <RefreshCw size={16} />
@@ -1117,14 +1117,14 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     <button
                         onClick={() => setWebSearchEnabled(v => !v)}
                         className={`p-1.5 rounded transition-all duration-200 ${webSearchEnabled
-                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_6px_rgba(16,185,129,0.15)]"
-                            : "text-gray-500 hover:text-gray-300 hover:bg-gray-700"
+                            ? "bg-ahme-success-muted text-ahme-success-text border border-ahme-success-border shadow-[0_0_6px_rgba(16,185,129,0.15)]"
+                            : "text-ahme-text-faint hover:text-ahme-text-secondary hover:bg-ahme-surface-hover"
                             }`}
                         title={webSearchEnabled ? "Web検索: ON" : "Web検索: OFF"}
                     >
                         <Globe size={18} />
                     </button>
-                    <button onClick={handleClear} className="p-1.5 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400 transition-colors" title="履歴をクリア">
+                    <button onClick={handleClear} className="p-1.5 hover:bg-ahme-surface-hover rounded text-ahme-text-muted hover:text-ahme-error-text transition-colors" title="履歴をクリア">
                         <Trash2 size={18} />
                     </button>
                 </div>
@@ -1134,31 +1134,31 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             <div className="flex-1 overflow-hidden relative">
                 <div
                     ref={scrollRef}
-                    className="h-full overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent select-text"
+                    className="h-full overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-ahme-surface-hover scrollbar-track-transparent select-text"
                     onContextMenu={handleContextMenu}
                 >
                     {messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-3 opacity-50">
+                        <div className="h-full flex flex-col items-center justify-center text-ahme-text-faint space-y-3 opacity-50">
                             <Bot size={48} strokeWidth={1} />
                             <p>エディタの内容について質問してみましょう</p>
-                            <p className="text-[11px] text-gray-600">💡 回答のテキストを選択すると「エディタに挿入」ボタンが表示されます</p>
-                            <p className="text-[11px] text-gray-600">📎 ファイルをドラッグ＆ドロップで添付できます</p>
+                            <p className="text-[11px] text-ahme-text-faint/60">💡 回答のテキストを選択すると「エディタに挿入」ボタンが表示されます</p>
+                            <p className="text-[11px] text-ahme-text-faint/60">📎 ファイルをドラッグ＆ドロップで添付できます</p>
                         </div>
                     ) : (
                         messages.filter(m => m.role !== "system").map((msg, i) => (
                             <div
                                 key={i}
-                                className={`flex gap-3 ${msg.role === "assistant" ? "bg-gray-800/30 -mx-4 px-4 py-3" : ""}`}
+                                className={`flex gap-3 ${msg.role === "assistant" ? "bg-ahme-chat-assistant-bg -mx-4 px-4 py-3" : ""}`}
                             >
                                 <div className="mt-1 shrink-0">
                                     {msg.role === "assistant" ? (
-                                        <div className="bg-blue-600 p-1 rounded text-white shadow-sm"><Bot size={14} /></div>
+                                        <div className="bg-ahme-chat-assistant-icon p-1 rounded text-white shadow-sm"><Bot size={14} /></div>
                                     ) : (
-                                        <div className="bg-gray-600 p-1 rounded text-white shadow-sm"><User size={14} /></div>
+                                        <div className="bg-ahme-chat-user-icon p-1 rounded text-white shadow-sm"><User size={14} /></div>
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0 space-y-1">
-                                    <div className="font-semibold text-[10px] text-gray-500 uppercase tracking-tighter">
+                                    <div className="font-semibold text-[10px] text-ahme-text-faint uppercase tracking-tighter">
                                         {msg.role === "assistant" ? "Assistant" : "You"}
                                     </div>
                                     {msg.role === "assistant" ? (
@@ -1168,7 +1168,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                             isStreaming={i === messages.length - 1 && isGenerating}
                                         />
                                     ) : (
-                                        <div className="text-gray-200 leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${fontSize}px` }}>
+                                        <div className="text-ahme-text-primary leading-relaxed whitespace-pre-wrap" style={{ fontSize: `${fontSize}px` }}>
                                             {msg.content}
                                         </div>
                                     )}
@@ -1178,7 +1178,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     )}
 
                     {error && (
-                        <div className="bg-red-900/20 border border-red-800 rounded-md p-3 text-red-400 text-xs flex items-start gap-2">
+                        <div className="bg-ahme-error-muted border border-ahme-error-border rounded-md p-3 text-ahme-error-text text-xs flex items-start gap-2">
                             <AlertCircle size={14} className="mt-0.5 shrink-0" />
                             <div>
                                 <p className="font-semibold">Error</p>
@@ -1197,7 +1197,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             {/* 右クリックコンテキストメニュー (最前面・Fixed配置・ポータル的扱い) */}
             {ctxMenu && (
                 <div
-                    className="fixed z-[99999] bg-gray-800 border border-gray-500 rounded-lg shadow-2xl py-2 min-w-[200px] backdrop-blur-md"
+                    className="fixed z-[99999] bg-ahme-surface border border-ahme-surface-border rounded-lg shadow-2xl py-2 min-w-[200px] backdrop-blur-md"
                     style={{ left: ctxMenu.x, top: ctxMenu.y }}
                     onClick={(e) => e.stopPropagation()}
                     onContextMenu={(e) => {
@@ -1206,7 +1206,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     }}
                 >
                     <button
-                        className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 transition-colors flex items-center gap-2.5"
+                        className="w-full px-4 py-2 text-left text-sm text-ahme-text-primary hover:bg-ahme-surface-hover transition-colors flex items-center gap-2.5"
                         onClick={() => {
                             navigator.clipboard.writeText(ctxMenu.text);
                             setCtxMenu(null);
@@ -1214,9 +1214,9 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     >
                         <span className="text-base">📋</span> コピー
                     </button>
-                    <div className="border-t border-gray-700 my-1" />
+                    <div className="border-t border-ahme-surface-border my-1" />
                     <button
-                        className="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-gray-700 transition-colors flex items-center gap-2.5"
+                        className="w-full px-4 py-2 text-left text-sm text-ahme-text-primary hover:bg-ahme-surface-hover transition-colors flex items-center gap-2.5"
                         onClick={() => {
                             const url = `https://www.google.com/search?q=${encodeURIComponent(ctxMenu.text)}`;
                             const api = (window as any).electronAPI;
@@ -1236,8 +1236,8 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             {/* ── 入力エリア（Dropzone 対応）── */}
             <div
                 className={`p-4 border-t transition-all duration-200 ${isDragOver
-                    ? "border-blue-500 bg-blue-900/20 shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]"
-                    : "border-gray-700 bg-gray-900/50"
+                    ? "border-ahme-primary-ring bg-ahme-primary-muted shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]"
+                    : "border-ahme-surface-border bg-ahme-surface-secondary/50"
                     }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -1245,7 +1245,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             >
                 {/* ドラッグオーバーレイ */}
                 {isDragOver && (
-                    <div className="mb-3 flex items-center justify-center gap-2 py-4 rounded-lg border-2 border-dashed border-blue-500/50 bg-blue-500/5 text-blue-400 text-xs font-medium">
+                    <div className="mb-3 flex items-center justify-center gap-2 py-4 rounded-lg border-2 border-dashed border-ahme-primary-ring/50 bg-ahme-primary-muted/10 text-ahme-primary-text text-xs font-medium">
                         <Paperclip size={16} />
                         ファイルをここにドロップ (.txt, .md, .pdf, 画像 ...)
                     </div>
@@ -1253,7 +1253,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
 
                 {/* 検索中インジケーター */}
                 {isSearching && (
-                    <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-900/20 border border-emerald-700/30 text-emerald-400 text-[11px]">
+                    <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-ahme-success-muted border border-ahme-success-border text-ahme-success-text text-[11px]">
                         <Loader2 size={12} className="animate-spin" />
                         Web検索中...
                     </div>
@@ -1272,12 +1272,12 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         {attachedImages.map(img => (
                             <div
                                 key={img.id}
-                                className="relative group flex items-center gap-1.5 pl-1 pr-1 py-1 rounded-md text-[11px] border bg-violet-900/20 border-violet-700/40 text-violet-300"
+                                className="relative group flex items-center gap-1.5 pl-1 pr-1 py-1 rounded-md text-[11px] border bg-ahme-image-chip border-ahme-image-chip-border text-ahme-image-chip-text"
                             >
                                 <img
                                     src={img.preview}
                                     alt={img.name}
-                                    className="w-8 h-8 rounded object-cover border border-violet-600/30"
+                                    className="w-8 h-8 rounded object-cover border border-ahme-image-chip-border/60"
                                 />
                                 <span className="truncate max-w-[100px] font-medium" title={img.name}>
                                     {img.name}
@@ -1287,7 +1287,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                 </span>
                                 <button
                                     onClick={() => removeImage(img.id)}
-                                    className="p-0.5 rounded hover:bg-gray-600/50 transition-colors shrink-0"
+                                    className="p-0.5 rounded hover:bg-ahme-surface-hover/50 transition-colors shrink-0"
                                     title="画像を取り消し"
                                 >
                                     <X size={12} />
@@ -1324,14 +1324,14 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         }
                         disabled={isGenerating}
                         style={{ fontSize: `${fontSize}px` }}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 pr-20 text-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all resize-none min-h-[80px] max-h-[300px] overflow-y-auto disabled:opacity-50"
+                        className="w-full bg-ahme-input border border-ahme-input-border rounded-lg p-3 pr-20 text-ahme-text-primary focus:outline-none focus:ring-1 focus:ring-ahme-input-focus transition-all resize-none min-h-[80px] max-h-[300px] overflow-y-auto disabled:opacity-50"
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
                         {/* 📎 ファイル添付ボタン */}
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isGenerating}
-                            className="p-2 rounded-md text-gray-400 hover:text-blue-400 hover:bg-gray-700/50 transition-all"
+                            className="p-2 rounded-md text-ahme-text-muted hover:text-ahme-primary-text hover:bg-ahme-surface-hover/50 transition-all"
                             title="ファイルを添付 (.txt, .md, .pdf, ...)"
                         >
                             <Paperclip size={16} />
@@ -1341,8 +1341,8 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             onClick={handleSend}
                             disabled={!inputValue.trim() || isGenerating || hasParsing}
                             className={`p-2 rounded-md transition-all ${inputValue.trim() && !isGenerating && !hasParsing
-                                ? "bg-blue-600 hover:bg-blue-500 text-white"
-                                : "bg-gray-700 text-gray-500 cursor-not-allowed"
+                                ? "bg-ahme-primary hover:bg-ahme-primary-hover text-white"
+                                : "bg-ahme-surface-hover text-ahme-text-faint cursor-not-allowed"
                                 }`}
                         >
                             {isGenerating ? (
@@ -1368,16 +1368,16 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     />
                 </div>
 
-                <div className="mt-2 text-[10px] text-gray-500 text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
-                    <span className={`w-1 h-1 rounded-full animate-pulse ${error ? "bg-red-500" : "bg-green-500"}`} />
+                <div className="mt-2 text-[10px] text-ahme-text-faint text-center uppercase tracking-widest flex items-center justify-center gap-1.5">
+                    <span className={`w-1 h-1 rounded-full animate-pulse ${error ? "bg-ahme-error-text" : "bg-ahme-chat-status-dot"}`} />
                     AHME Context-Aware AI
                     {webSearchEnabled && (
-                        <span className="normal-case tracking-normal text-emerald-400/70">
+                        <span className="normal-case tracking-normal text-ahme-success-text/70">
                             · 🌐 Web
                         </span>
                     )}
                     {totalAttachments > 0 && (
-                        <span className="normal-case tracking-normal text-blue-400/70">
+                        <span className="normal-case tracking-normal text-ahme-primary-text/70">
                             · {totalAttachments}件の添付
                         </span>
                     )}

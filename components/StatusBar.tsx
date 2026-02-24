@@ -14,7 +14,7 @@ interface StatusBarProps {
 /** ステータスバー：行/列・言語モードを表示 */
 export default function StatusBar({ line, column, language }: StatusBarProps) {
     return (
-        <div className="flex items-center justify-between px-4 py-1 bg-ahme-statusbar text-gray-300/60 text-xs border-t border-ahme-border select-none">
+        <div className="flex items-center justify-between px-4 py-1 bg-ahme-statusbar text-ahme-text-secondary/60 text-xs border-t border-ahme-border select-none">
             <div className="flex gap-4">
                 <span>行 {line}, 列 {column}</span>
             </div>

@@ -66,7 +66,7 @@ export default function TabBar({
 
     const handleDrop = (e: React.DragEvent, dropIndex: number) => {
         e.preventDefault();
-        
+
         if (draggedIndex === null || draggedIndex === dropIndex) {
             setDraggedIndex(null);
             setDragOverIndex(null);
@@ -92,7 +92,7 @@ export default function TabBar({
     };
 
     return (
-        <div 
+        <div
             className="flex items-end bg-ahme-tabbar border-b border-ahme-border overflow-x-auto select-none relative scrollbar-none"
             ref={scrollContainerRef}
         >
@@ -120,25 +120,25 @@ export default function TabBar({
                         }}
                         className={`
                             group relative flex items-center min-w-[120px] max-w-[200px] h-9 px-3 border-r border-ahme-border cursor-pointer transition-all duration-150 rounded-t-lg overflow-hidden mt-1 ml-1
-                            ${isActive 
-                                ? "bg-gray-700 text-blue-400 font-medium" // アクティブ時は背景色と同化
-                                : "text-gray-400 hover:bg-ahme-bg/50 hover:text-gray-200"
+                            ${isActive
+                                ? "bg-ahme-tab-active-bg text-ahme-tab-active-text font-medium"
+                                : "text-ahme-text-muted hover:bg-ahme-bg/50 hover:text-ahme-text-primary"
                             }
                             ${isDragged ? "opacity-30" : "opacity-100"}
                         `}
                     >
-                        {/* ドロップ位置を示す青いハイライト線 */}
+                        {/* ドロップ位置を示すハイライト線 */}
                         {isDragOver && draggedIndex !== null && (
-                            <div className={`absolute top-0 bottom-0 w-1 bg-blue-500 z-10 ${draggedIndex > index ? "left-0" : "right-0"}`} />
+                            <div className={`absolute top-0 bottom-0 w-1 bg-ahme-tab-accent z-10 ${draggedIndex > index ? "left-0" : "right-0"}`} />
                         )}
 
                         {/* アクティブタブの上部にアクセントラインを表示 */}
                         {isActive && (
-                            <div className="absolute top-0 left-0 right-0 h-[2px] bg-blue-500" />
+                            <div className="absolute top-0 left-0 right-0 h-[2px] bg-ahme-tab-accent" />
                         )}
 
-                        <FileText size={14} className={`mr-2 shrink-0 ${tab.isModified ? "text-amber-400" : "opacity-70"}`} />
-                        
+                        <FileText size={14} className={`mr-2 shrink-0 ${tab.isModified ? "text-ahme-warning-text" : "opacity-70"}`} />
+
                         <span className={`truncate text-xs flex-1 ${tab.isModified ? "italic font-semibold" : ""}`}>
                             {tab.title}
                         </span>
@@ -150,9 +150,9 @@ export default function TabBar({
                             }}
                             className={`
                                 ml-2 p-0.5 rounded-md flex items-center justify-center shrink-0 transition-colors
-                                ${tab.isModified 
-                                    ? "bg-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-white" 
-                                    : "opacity-0 group-hover:opacity-100 hover:bg-gray-700/50"
+                                ${tab.isModified
+                                    ? "bg-ahme-warning-muted text-ahme-warning-text hover:bg-ahme-warning-text hover:text-white"
+                                    : "opacity-0 group-hover:opacity-100 hover:bg-ahme-surface-hover"
                                 }
                             `}
                             title="閉じる"
@@ -166,7 +166,7 @@ export default function TabBar({
             {/* 新規タブ追加ボタン */}
             <button
                 onClick={onAddTab}
-                className="flex items-center justify-center w-10 h-9 text-gray-500 hover:bg-ahme-bg/50 hover:text-gray-200 transition-colors shrink-0"
+                className="flex items-center justify-center w-10 h-9 text-ahme-text-faint hover:bg-ahme-bg/50 hover:text-ahme-text-primary transition-colors shrink-0"
                 title="新しいタブ (Ctrl+N)"
             >
                 <Plus size={18} />

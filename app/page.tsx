@@ -467,7 +467,7 @@ export default function Home() {
       document.title = "AHME";
     }
   }, [tabs, activeTabId]);
-  
+
   // --- テーマを <body> タグに反映させる処理 ---
   useEffect(() => {
     document.body.classList.remove("theme-violet", "theme-dark", "theme-light", "theme-hc");
@@ -557,9 +557,9 @@ export default function Home() {
                 <>
                   <PanelResizeHandle
                     id="main-resizer"
-                    className="w-1.5 bg-gray-800 hover:bg-blue-600 transition-colors cursor-col-resize flex items-center justify-center"
+                    className="w-1.5 bg-ahme-resizer hover:bg-ahme-resizer-hover transition-colors cursor-col-resize flex items-center justify-center"
                   >
-                    <div className="h-8 w-px bg-gray-600" />
+                    <div className="h-8 w-px bg-ahme-resizer-handle" />
                   </PanelResizeHandle>
                   <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
                     <AiPanel
