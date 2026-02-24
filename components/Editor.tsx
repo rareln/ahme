@@ -84,6 +84,32 @@ const MemoEditor = React.memo(
             getDefaultModel().then((m) => { modelRef.current = m; });
         }, []);
 
+        // --- Electron メニューからの Undo / Redo リスナー ---
+        useEffect(() => {
+            const api = (window as any).electronAPI;
+            if (!api || !api.on) return;
+
+            const unsubUndo = api.on('menu:undo', () => {
+                if (editorRef.current) {
+                    editorRef.current.trigger('source', 'undo', null);
+                    editorRef.current.focus();
+                }
+            });
+
+            const unsubRedo = api.on('menu:redo', () => {
+                if (editorRef.current) {
+                    editorRef.current.trigger('source', 'redo', null);
+                    editorRef.current.focus();
+                }
+            });
+
+            return () => {
+                if (unsubUndo) unsubUndo();
+                if (unsubRedo) unsubRedo();
+            };
+        }, []);
+        // ----------------------------------------------------
+
         useEffect(() => {
             if (editorRef.current && showSearch) {
                 editorRef.current.getAction("actions.find").run();
@@ -115,7 +141,7 @@ const MemoEditor = React.memo(
                 label: "🔍 Google検索",
                 contextMenuGroupId: "navigation",
                 contextMenuOrder: 1.5,
-                run: (ed) => {
+                run: (ed: any) => {
                     const selection = ed.getSelection();
                     if (!selection) return;
                     const text = ed.getModel()?.getValueInRange(selection);
@@ -142,7 +168,7 @@ const MemoEditor = React.memo(
                 contextMenuOrder: 0,
                 precondition: undefined,
 
-                run: async (ed) => {
+                run: async (ed: any) => {
                     if (isGeneratingRef.current) return;
 
                     editorContext.cleanupAiUI();
@@ -276,6 +302,7 @@ const MemoEditor = React.memo(
                         occurrencesHighlight: "off",
                         overviewRulerBorder: false,
                         hideCursorInOverviewRuler: true,
+                        stickyScroll: { enabled: false },
                     }}
                 />
             </div>

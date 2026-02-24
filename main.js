@@ -87,8 +87,8 @@ async function createWindow() {
         {
             label: '編集',
             submenu: [
-                { label: '元に戻す', role: 'undo' },
-                { label: 'やり直し', role: 'redo' },
+                { label: '元に戻す', accelerator: 'CmdOrCtrl+Z', click: () => win.webContents.send('menu:undo') },
+                { label: 'やり直し', accelerator: 'CmdOrCtrl+Y', click: () => win.webContents.send('menu:redo') }, 
                 { type: 'separator' },
                 { label: '切り取り', role: 'cut' },
                 { label: 'コピー', role: 'copy' },

@@ -267,6 +267,11 @@ export default function Home() {
     [doCloseTab]
   );
 
+  // --- タブの順番入れ替え ---
+  const handleReorderTabs = useCallback((newTabs: TabData[]) => {
+    setTabs(newTabs);
+  }, []);
+
   const handleContentChange = useCallback(
     (newContent: string) => {
       setTabs((prev) =>
@@ -462,6 +467,18 @@ export default function Home() {
       document.title = "AHME";
     }
   }, [tabs, activeTabId]);
+  
+  // --- テーマを <body> タグに反映させる処理 ---
+  useEffect(() => {
+    document.body.classList.remove("theme-violet", "theme-dark", "theme-light", "theme-hc");
+
+    let themeClass = "theme-violet";
+    if (settings.theme === "vs-dark") themeClass = "theme-dark";
+    if (settings.theme === "vs") themeClass = "theme-light";
+    if (settings.theme === "hc-black") themeClass = "theme-hc";
+
+    document.body.classList.add(themeClass);
+  }, [settings.theme]);
 
   // --- 保存確認ダイアログのハンドラ ---
   const handleConfirmSave = useCallback(async () => {
@@ -484,7 +501,7 @@ export default function Home() {
 
   return (
     <EditorProvider>
-      <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <div className="flex flex-col h-screen bg-ahme-bg text-white">
         {/* メニューバー */}
         <Header
           onOpenFile={handleOpenFile}
@@ -506,6 +523,7 @@ export default function Home() {
           onSelectTab={setActiveTabId}
           onAddTab={handleAddTab}
           onCloseTab={handleCloseTab}
+          onReorderTabs={handleReorderTabs}
         />
 
         {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}

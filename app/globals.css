@@ -1,113 +1,175 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* =========================================================
+   1. テーマ別カラー設定（ここを編集して好きな色に変えます！）
+   ========================================================= */
+
+/*  デフォルト (AHMEテーマ) の色設定 */
+:root, .theme-AHME {
+  
+  --theme-base-bg: #111827;                /* 背景色（Tailwindの bg-ahme-bg になります） */
+  --theme-panel-bg: #1f2937;               /* パネル背景色（Tailwindの bg-ahme-panel になります） */
+  --theme-editor-bg: #1d1d1e;              /* Monacoエディタの背景色 */
+  --theme-editor-margin: #1f2937;          /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #E0E0E0;            /* Monacoエディタの文字色 */
+  --theme-header-bg: #1f2937;              /* 上部メニューバー */
+  --theme-tabbar-bg: #111827;              /* タブバー */
+  --theme-statusbar-bg: #1f2937;           /* 最下部ステータスバー */
+  --theme-border: #374151; /* 境界線 */   
 }
 
+/* 🌑 ダークテーマ (Dark) の色設定 */
+.theme-dark {
+  --theme-base-bg: #161010;               /* 背景色（Tailwindの bg-ahme-bg になります） */
+  --theme-panel-bg: #0d0808;              /* パネル背景色（Tailwindの bg-ahme-panel になります） */
+  --theme-editor-bg: #1b1a1a;             /* Monacoエディタの背景色 */
+  --theme-editor-margin: #333333;         /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #d4d4d4;           /* Monacoエディタの文字色 */
+  --theme-header-bg: #333333;             /* 上部メニューバー */
+  --theme-tabbar-bg: #252526;             /* タブバー */
+  --theme-statusbar-bg: #333333;          /* 最下部ステータスバー */
+  --theme-border: #444444;                /* 境界線 */ 
+}
+
+/* ☀️ ライトテーマ (Light) の色設定 */
+.theme-light {
+  --theme-base-bg: #f3f4f6;              /* 背景色（Tailwindの bg-ahme-bg になります） */
+  --theme-panel-bg: #ffffff;             /* パネル背景色（Tailwindの bg-ahme-panel になります） */
+  --theme-editor-bg: #ffffff;            /* Monacoエディタの背景色 */
+  --theme-editor-margin: #f3f4f6;        /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #333333;          /* Monacoエディタの文字色 */
+  --theme-header-bg: #e5e7eb;            /* 上部メニューバー */
+  --theme-tabbar-bg: #f9fafb;            /* タブバー */
+  --theme-statusbar-bg: #212222;         /* 最下部ステータスバー */
+  --theme-border: #d1d5db;               /* 境界線 */
+}
+
+/* ⬛ ハイコントラスト (High Contrast) の色設定 */
+.theme-hc {
+  --theme-base-bg: #000000;              /* 背景色（Tailwindの bg-ahme-bg になります） */
+  --theme-panel-bg: #000000;             /* パネル背景色（Tailwindの bg-ahme-panel になります） */
+  --theme-editor-bg: #000000;            /* Monacoエディタの背景色 */
+  --theme-editor-margin: #000000;        /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #ffffff;          /* Monacoエディタの文字色 */
+  --theme-header-bg: #000000;            /* 上部メニューバー */
+  --theme-tabbar-bg: #000000;            /* タブバー */
+  --theme-statusbar-bg: #000000;         /* 最下部ステータスバー */
+  --theme-border: #ffffff;               /* 境界線 */
+}
+
+/* =========================================================
+   2. Tailwind v4 との連携（ここは変更しなくてOKです）
+   ========================================================= */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* 上で設定した変数をTailwindのクラス名として使えるように紐付けます */
+  --color-ahme-bg: var(--theme-base-bg);
+  --color-ahme-panel: var(--theme-panel-bg);
+  --color-background: var(--theme-base-bg);
+  --color-foreground: var(--theme-editor-text);
+  --color-ahme-header: var(--theme-header-bg);
+  --color-ahme-tabbar: var(--theme-tabbar-bg);
+  --color-ahme-statusbar: var(--theme-statusbar-bg);
+  --color-ahme-border: var(--theme-border);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--theme-base-bg);
+  color: var(--theme-editor-text);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Monaco Editor 行番号カラムのカスタマイズ */
+/* =========================================================
+   3. Monaco Editor テーマ別適用の仕組み（ここは変更しなくてOKです）
+   ========================================================= */
+
+/* エディタ全体の背景 */
+.monaco-editor,
+.monaco-editor-background,
+.monaco-editor .inputarea.ime-input {
+  background-color: var(--theme-editor-bg) !important;
+}
+
+/* 行番号カラムの背景 */
 .monaco-editor .margin {
-  background-color: #1f2937 !important;
-  /* ステータスバー (bg-gray-800) と統一 */
+  background-color: var(--theme-editor-margin) !important;
 }
 
+/* 基本文字色 */
+.monaco-editor .mtk1 {
+  color: var(--theme-editor-text) !important;
+}
+
+/* 行番号のテキストカラー（ベースをグレーに） */
 .monaco-editor .line-numbers {
-  color: #888888 !important;
-  width: 35px !important;
+  color: #6b7280 !important;
 }
 
-/* カレント行ハイライト (ダークグレー) */
+/* カレント行ハイライト */
 .monaco-editor .view-overlays .current-line {
-  background-color: #333333 !important;
+  background-color: rgba(128, 128, 128, 0.1) !important;
   border: none !important;
 }
 
-/* 行番号のアクティブハイライトを抑制 */
+
+/* =========================================================
+   4. Monaco Editor 共通・検索ハイライト設定（全テーマ共通）
+   ========================================================= */
 .monaco-editor .line-numbers.active-line-number {
   color: #888888 !important;
 }
-
-/* ── 検索・置換ハイライトカラー ── */
-/* 検索マッチ（非選択）: 薄い茶色 */
 .monaco-editor .findMatch {
   background-color: rgba(181, 137, 80, 0.45) !important;
   border: 1px solid rgba(181, 137, 80, 0.6) !important;
 }
-
-/* 検索マッチ（現在選択中）: オレンジ */
 .monaco-editor .currentFindMatch {
   background-color: rgba(255, 165, 0, 0.6) !important;
   border: 1px solid rgba(255, 165, 0, 0.9) !important;
 }
-
-/* 置換対象ハイライト: 黄緑 */
-/* 置換対象ハイライト: 黄緑 */
 .monaco-editor .findMatchInPeekEditor,
-/* .monaco-editor .selectionHighlight,  <- ノイズになるため除外 */
 .monaco-editor .rangeHighlight {
   background-color: rgba(174, 238, 80, 0.45) !important;
   border: 1px solid rgba(174, 238, 80, 0.7) !important;
 }
-
-/* Fcitx5 向け最小構成 */
 .monaco-editor .inputarea {
-  /* 透明度を 0 にせず、ごく僅かに残す (OSへの存在証明) */
   opacity: 0.01 !important;
 }
-
-/* 選択テキストのハイライトカラー変更（鮮やかな青） */
 .monaco-editor .selected-text {
   background-color: #0078d4 !important;
 }
-
 .monaco-editor.focused .selected-text {
   background-color: #0078d4 !important;
 }
 
-/* ── スクロールバーのテーマ連動 (Dark Base) ── */
+/* =========================================================
+   5. スクロールバーのカスタマイズ
+   ========================================================= */
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #111827;
-  /* gray-900 */
+  background: var(--theme-editor-margin);
 }
-
 ::-webkit-scrollbar-corner {
-  background: #111827;
+  background: var(--theme-editor-margin);
 }
-
 ::-webkit-scrollbar-thumb {
   background-color: #4b5563;
-  /* gray-600 */
   border-radius: 6px;
-  border: 3px solid #111827;
-  /* 背景と同色のボーダーでパディング効果 */
+  border: 3px solid var(--theme-editor-margin);
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background-color: #6b7280;
-  /* gray-500 */
+}
+
+/* =========================================================
+   6. Monaco Editor カーソルの強制表示
+   ========================================================= */
+.monaco-editor .cursor {
+  background-color: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
 }

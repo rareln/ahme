@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 export interface AppSettings {
     fontSize: number;
     wordWrap: "on" | "off" | "wordWrapColumn";
-    theme: "vs-dark" | "vs" | "hc-black";
+    theme: "vs-dark" | "vs" | "hc-black" | "violet";
     tabSize: number;
 }
 
@@ -14,7 +14,7 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
     fontSize: 14,
     wordWrap: "on",
-    theme: "vs-dark",
+    theme: "violet",
     tabSize: 4,
 };
 
@@ -28,7 +28,7 @@ interface SettingsDialogProps {
 /** 共通の入力フィールドスタイル */
 const inputClassName =
     "w-full rounded px-3 py-1.5 text-sm border focus:outline-none " +
-    "bg-gray-700 text-white border-gray-600 focus:border-blue-500";
+    "bg-gray-700 text-white border-gray-600 focus:border-violet-500";
 
 /** select要素用スタイル（ドロップダウンの背景色も統一） */
 const selectClassName =
@@ -58,8 +58,8 @@ export default function SettingsDialog({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-            <div className="bg-gray-800 border border-gray-600 rounded-lg shadow-2xl w-[420px] p-6">
-                <h2 className="text-lg font-bold text-white mb-4">⚙️ 設定</h2>
+            <div className="bg-[#0f0a1e] border border-violet-900/50 rounded-lg shadow-2xl w-[420px] p-6">
+                <h2 className="text-lg font-bold text-violet-100 mb-4">⚙️ 設定 (Generate)</h2>
 
                 {/* フォントサイズ */}
                 <div className="mb-4">
@@ -89,6 +89,7 @@ export default function SettingsDialog({
                         }
                         className={selectClassName}
                     >
+                        <option value="AHME">AHME</option>
                         <option value="vs-dark">ダーク</option>
                         <option value="vs">ライト</option>
                         <option value="hc-black">ハイコントラスト</option>
@@ -132,13 +133,13 @@ export default function SettingsDialog({
                 <div className="flex justify-end gap-2">
                     <button
                         onClick={onClose}
-                        className="px-4 py-1.5 text-sm text-gray-300 hover:text-white rounded hover:bg-gray-700 transition-colors"
+                        className="px-4 py-1.5 text-sm text-gray-300 hover:text-white rounded hover:bg-violet-900/40 transition-colors"
                     >
                         キャンセル
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-4 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 text-white rounded transition-colors"
+                        className="px-4 py-1.5 text-sm bg-violet-600 hover:bg-violet-500 text-white rounded transition-colors"
                     >
                         保存
                     </button>
