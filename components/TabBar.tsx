@@ -121,7 +121,7 @@ export default function TabBar({
                         className={`
                             group relative flex items-center min-w-[120px] max-w-[200px] h-9 px-3 border-r border-ahme-border cursor-pointer transition-all duration-150 rounded-t-lg overflow-hidden mt-1 ml-1
                             ${isActive 
-                                ? "bg-ahme-bg text-blue-400 font-medium" // アクティブ時は背景色と同化
+                                ? "bg-gray-700 text-blue-400 font-medium" // アクティブ時は背景色と同化
                                 : "text-gray-400 hover:bg-ahme-bg/50 hover:text-gray-200"
                             }
                             ${isDragged ? "opacity-30" : "opacity-100"}
