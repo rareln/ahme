@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 export interface AppSettings {
     fontSize: number;
     wordWrap: "on" | "off" | "wordWrapColumn";
-    theme: "vs-dark" | "vs" | "hc-black" | "violet";
+    theme: "vs-dark" | "vs" | "hc-black" | "violet" | "aurora";
     tabSize: number;
 }
 
@@ -90,6 +90,7 @@ export default function SettingsDialog({
                         className={selectClassName}
                     >
                         <option value="AHME">AHME</option>
+                        <option value="aurora">🌌 ミッドナイトオーロラ</option>
                         <option value="vs-dark">ダーク</option>
                         <option value="vs">ライト</option>
                         <option value="hc-black">ハイコントラスト</option>

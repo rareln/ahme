@@ -464,6 +464,144 @@
   --theme-image-chip-text: #80bfff;
 }
 
+/* 🌌 ミッドナイトオーロラテーマ (Midnight Aurora) の色設定 */
+.theme-aurora {
+  --theme-base-bg: #0B1120;
+  /* 背景色 — 深い紺藍 */
+  --theme-panel-bg: #0F1A2E;
+  /* パネル背景色 — やや明るい紺 */
+  --theme-editor-bg: #0D1525;
+  /* Monacoエディタの背景色 */
+  --theme-editor-margin: #0F1A2E;
+  /* Monacoエディタの行番号エリア背景色 */
+  --theme-editor-text: #C8D6E5;
+  /* Monacoエディタの文字色 — 青みシルバー */
+  --theme-header-bg: #0F1A2E;
+  /* 上部メニューバー */
+  --theme-tabbar-bg: #0B1120;
+  /* タブバー */
+  --theme-statusbar-bg: #0A0E1A;
+  /* 最下部ステータスバー */
+  --theme-border: rgba(56, 189, 248, 0.12);
+  /* 境界線 — シアン微光 */
+
+  /* --- プライマリカラー（シアン → インディゴ） --- */
+  --theme-primary: #6366f1;
+  /* ボタン背景 (インディゴ) */
+  --theme-primary-hover: #818cf8;
+  /* ボタンホバー (ソフトインディゴ) */
+  --theme-primary-muted: rgba(99, 102, 241, 0.15);
+  /* 薄いアクセント背景 */
+  --theme-primary-text: #38bdf8;
+  /* アクセントテキスト (スカイシアン) */
+  --theme-primary-ring: #6366f1;
+  /* フォーカスリング */
+
+  /* --- テキストカラー --- */
+  --theme-text-primary: #C8D6E5;
+  /* メインテキスト — 青みシルバー */
+  --theme-text-secondary: #94A3B8;
+  /* サブテキスト — スレートグレー */
+  --theme-text-muted: #64748B;
+  /* 控えめテキスト */
+  --theme-text-faint: #475569;
+  /* 薄いテキスト */
+
+  /* --- サーフェスカラー --- */
+  --theme-surface: #131D35;
+  /* カード背景 */
+  --theme-surface-hover: #1A2744;
+  /* ホバー */
+  --theme-surface-border: rgba(56, 189, 248, 0.1);
+  /* ボーダー — シアン微光 */
+  --theme-surface-secondary: #0A0E1A;
+  /* 二次背景 */
+
+  /* --- AIトグル --- */
+  --theme-toggle-on: #38bdf8;
+  /* ON状態 (スカイシアン) */
+  --theme-toggle-off: rgba(56, 189, 248, 0.2);
+  /* OFF状態 */
+
+  /* --- アクティブタブ --- */
+  --theme-tab-active-bg: #131D35;
+  /* アクティブタブ背景 */
+  --theme-tab-active-text: #38bdf8;
+  /* アクティブタブ文字 (シアン) */
+  --theme-tab-accent: linear-gradient(90deg, #38bdf8, #818cf8);
+  /* グラデーション */
+
+  /* --- ステータスカラー --- */
+  --theme-success: #2dd4bf;
+  /* 成功 (ティール) */
+  --theme-success-text: #5eead4;
+  /* 成功テキスト */
+  --theme-success-muted: rgba(45, 212, 191, 0.12);
+  --theme-success-border: rgba(94, 234, 212, 0.25);
+  --theme-warning-text: #fbbf24;
+  /* 警告テキスト */
+  --theme-warning-muted: rgba(251, 191, 36, 0.1);
+  --theme-warning-border: rgba(251, 191, 36, 0.25);
+  --theme-error: #f43f5e;
+  /* エラー (ローズ) */
+  --theme-error-text: #fb7185;
+  /* エラーテキスト */
+  --theme-error-muted: rgba(244, 63, 94, 0.12);
+  --theme-error-border: rgba(251, 113, 133, 0.25);
+
+  /* --- 挿入確認済 --- */
+  --theme-confirm-text: #5eead4;
+  /* ティール */
+  --theme-confirm-muted: rgba(94, 234, 212, 0.12);
+  --theme-confirm-border: rgba(94, 234, 212, 0.25);
+
+  /* --- コードブロック --- */
+  --theme-codeblock-bg: #080E1A;
+  /* 深い紺 */
+  --theme-codeblock-header: rgba(15, 26, 46, 0.9);
+
+  /* --- 入力フィールド --- */
+  --theme-input-bg: #0F1A2E;
+  --theme-input-border: rgba(56, 189, 248, 0.15);
+  --theme-input-focus-ring: #6366f1;
+
+  /* --- 区切り線 --- */
+  --theme-divider: rgba(56, 189, 248, 0.08);
+
+  /* --- リサイザー --- */
+  --theme-resizer: #0F1A2E;
+  --theme-resizer-hover: #6366f1;
+  --theme-resizer-handle: rgba(56, 189, 248, 0.3);
+
+  /* --- AIチャット固有 --- */
+  --theme-chat-assistant-bg: rgba(19, 29, 53, 0.5);
+  --theme-chat-assistant-icon: #6366f1;
+  /* インディゴ */
+  --theme-chat-user-icon: #1e293b;
+  --theme-chat-streaming: #38bdf8;
+  /* シアン */
+  --theme-chat-link: #38bdf8;
+  --theme-chat-link-hover: #7dd3fc;
+  --theme-chat-status-dot: #2dd4bf;
+  /* ティール */
+
+  /* --- ダイアログ --- */
+  --theme-dialog-bg: #0D1525;
+  --theme-dialog-title: #C8D6E5;
+  --theme-dialog-border: rgba(99, 102, 241, 0.25);
+  --theme-dialog-input-bg: #131D35;
+  --theme-dialog-input-border: rgba(56, 189, 248, 0.15);
+  --theme-dialog-focus: #6366f1;
+  --theme-dialog-btn: #6366f1;
+  --theme-dialog-btn-hover: #818cf8;
+  --theme-dialog-btn-muted: rgba(99, 102, 241, 0.2);
+
+  /* --- 画像プレビュー --- */
+  --theme-image-chip-bg: rgba(99, 102, 241, 0.12);
+  --theme-image-chip-border: rgba(129, 140, 248, 0.25);
+  --theme-image-chip-text: #a5b4fc;
+}
+
 /* =========================================================
    2. Tailwind v4 との連携（ここは変更しなくてOKです）
    ========================================================= */
