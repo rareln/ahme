@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+// ★ EditorContext から useEditorContext をインポート
+import { useEditorContext } from "./EditorContext"; 
 
 interface HeaderProps {
   onOpenFile: () => void;
@@ -28,6 +30,29 @@ export default function Header({
   aiEnabled,
   onToggleAi,
 }: HeaderProps) {
+  
+  // ★ コンテキストを取得
+  const editorContext = useEditorContext(); 
+
+  // --- Undo / Redo 実行関数 ---
+  const handleUndo = () => {
+    // ★ getEditor() メソッドを使ってエディタ本体を取得する！
+    const editor = editorContext.getEditor();
+    if (editor) {
+      editor.trigger('source', 'undo', null);
+      editor.focus();
+    }
+  };
+
+  const handleRedo = () => {
+    // ★ 同様に getEditor() メソッドを使用
+    const editor = editorContext.getEditor();
+    if (editor) {
+      editor.trigger('source', 'redo', null);
+      editor.focus();
+    }
+  };
+
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-ahme-header border-b border-ahme-border">
       {/* 左: ファイル操作アイコン＋ラベル */}
@@ -36,6 +61,12 @@ export default function Header({
         <MenuButton icon="💾" label="保存" onClick={onSave} />
         <MenuButton icon="📝" label="別名保存" onClick={onSaveAs} />
         <div className="w-px h-6 bg-ahme-divider mx-1" />
+        
+        {/* ★ 追加: 検索の左側に 元に戻す / やり直し ボタンを配置 */}
+        <MenuButton icon="↩️" label="元に戻す" onClick={handleUndo} />
+        <MenuButton icon="↪️" label="やり直し" onClick={handleRedo} />
+        <div className="w-px h-6 bg-ahme-divider mx-1" />
+
         <MenuButton icon="🔍" label="検索" onClick={onSearch} />
         <MenuButton icon="🔄" label="置換" onClick={onReplace} />
         <div className="w-px h-6 bg-ahme-divider mx-1" />
