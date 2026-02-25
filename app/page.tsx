@@ -470,13 +470,15 @@ export default function Home() {
 
   // --- テーマを <body> タグに反映させる処理 ---
   useEffect(() => {
-    document.body.classList.remove("theme-violet", "theme-dark", "theme-light", "theme-hc", "theme-aurora");
+    document.body.classList.remove("theme-violet", "theme-dark", "theme-light", "theme-hc", "theme-aurora", "theme-ember", "theme-sakura");
 
     let themeClass = "theme-violet";
     if (settings.theme === "vs-dark") themeClass = "theme-dark";
     if (settings.theme === "vs") themeClass = "theme-light";
     if (settings.theme === "hc-black") themeClass = "theme-hc";
     if (settings.theme === "aurora") themeClass = "theme-aurora";
+    if (settings.theme === "ember") themeClass = "theme-ember";
+    if (settings.theme === "sakura") themeClass = "theme-sakura";
 
     document.body.classList.add(themeClass);
   }, [settings.theme]);

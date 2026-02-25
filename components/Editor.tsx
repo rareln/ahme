@@ -268,6 +268,16 @@ const MemoEditor = React.memo(
             if (value !== undefined) onChange(value);
         };
 
+        // カスタムテーマ名 → Monaco が理解できるベーステーマにマッピング
+        // 実際の色はCSSオーバーライド (globals.css) で制御
+        const monacoTheme = (() => {
+            switch (settings.theme) {
+                case "vs": return "vs";
+                case "hc-black": return "hc-black";
+                default: return "vs-dark"; // AHME, aurora, ember, sakura → vs-dark ベース
+            }
+        })();
+
         return (
             <div className="h-full w-full bg-transparent relative editor-container">
                 <Editor
@@ -275,7 +285,7 @@ const MemoEditor = React.memo(
                     width="100%"
                     language={language}
                     defaultValue={defaultValue}
-                    theme={settings.theme}
+                    theme={monacoTheme}
                     onChange={handleEditorChange}
                     onMount={handleEditorDidMount}
                     options={{

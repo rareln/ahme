@@ -6,7 +6,7 @@ import React, { useState, useEffect } from "react";
 export interface AppSettings {
     fontSize: number;
     wordWrap: "on" | "off" | "wordWrapColumn";
-    theme: "vs-dark" | "vs" | "hc-black" | "violet" | "aurora";
+    theme: "vs-dark" | "vs" | "hc-black" | "violet" | "aurora" | "ember" | "sakura";
     tabSize: number;
 }
 
@@ -25,15 +25,14 @@ interface SettingsDialogProps {
     onSave: (settings: AppSettings) => void;
 }
 
-/** 共通の入力フィールドスタイル */
 const inputClassName =
     "w-full rounded px-3 py-1.5 text-sm border focus:outline-none " +
-    "bg-ahme-dialog-input text-white border-ahme-dialog-input-border focus:border-ahme-dialog-focus";
+    "bg-ahme-dialog-input text-ahme-dialog-title border-ahme-dialog-input-border focus:border-ahme-dialog-focus";
 
 /** select要素用スタイル（ドロップダウンの背景色も統一） */
 const selectClassName =
     inputClassName +
-    " appearance-none [&>option]:bg-ahme-dialog-input [&>option]:text-white";
+    " appearance-none [&>option]:bg-ahme-dialog-input [&>option]:text-ahme-dialog-title";
 
 /** 設定ダイアログ（全ラベル日本語） */
 export default function SettingsDialog({
@@ -89,8 +88,10 @@ export default function SettingsDialog({
                         }
                         className={selectClassName}
                     >
-                        <option value="AHME">AHME</option>
+                        <option value="violet">AHME</option>
                         <option value="aurora">🌌 ミッドナイトオーロラ</option>
+                        <option value="ember">🔥 ウォームエンバー</option>
+                        <option value="sakura">🌸 桜夜</option>
                         <option value="vs-dark">ダーク</option>
                         <option value="vs">ライト</option>
                         <option value="hc-black">ハイコントラスト</option>
