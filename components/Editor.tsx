@@ -13,6 +13,8 @@ interface EditorProps {
     onCursorChange: (line: number, column: number) => void;
     showSearch?: number;
     showReplace?: number;
+    initialScrollTop?: number;
+    onScrollSave?: (scrollTop: number) => void;
 }
 
 /** AIモデルを取得（gemma3:12b優先） */
@@ -73,11 +75,14 @@ const MemoEditor = React.memo(
         onCursorChange,
         showSearch,
         showReplace,
+        initialScrollTop,
+        onScrollSave,
     }: EditorProps) {
         const editorRef = useRef<any>(null);
         const monacoRef = useRef<any>(null);
         const modelRef = useRef<string>("gemma3:12b");
         const isGeneratingRef = useRef(false);
+        const scrollTopRef = useRef<number>(0);
         const editorContext = useEditorContext();
 
         useEffect(() => {
@@ -131,6 +136,26 @@ const MemoEditor = React.memo(
 
             editor.focus();
 
+            // スクロール位置の復元（レイアウト完了を待ってリトライ）
+            if (initialScrollTop && initialScrollTop > 0) {
+                let retries = 0;
+                const tryRestore = () => {
+                    const contentHeight = editor.getScrollHeight();
+                    if (contentHeight > editor.getLayoutInfo().height && retries < 10) {
+                        editor.setScrollTop(initialScrollTop);
+                    } else if (retries < 10) {
+                        retries++;
+                        requestAnimationFrame(tryRestore);
+                    }
+                };
+                setTimeout(tryRestore, 100);
+            }
+
+            // スクロール位置の追跡
+            editor.onDidScrollChange((e: any) => {
+                scrollTopRef.current = e.scrollTop;
+            });
+
             editor.onDidChangeCursorPosition((e) => {
                 onCursorChange(e.position.lineNumber, e.position.column);
             });
@@ -153,6 +178,47 @@ const MemoEditor = React.memo(
                         } else {
                             window.open(url, '_blank');
                         }
+                    }
+                }
+            });
+
+            // --- 右クリックペーストの強制アクション ---
+            editor.addAction({
+                id: "force-paste-action",
+                label: "📋 貼り付け",
+                // keybindings を削除したので、キーボード操作は標準機能に譲ります
+                contextMenuGroupId: "9_cutcopypaste",
+                contextMenuOrder: 1,
+                run: async (ed: any) => {
+                    try {
+                        // ブラウザの Clipboard API を使ってテキストを読み取る
+                        const text = await navigator.clipboard.readText();
+                        if (!text) return;
+
+                        const selection = ed.getSelection();
+                        if (!selection) return;
+
+                        // 履歴に残るように executeEdits で挿入
+                        ed.executeEdits("context-paste", [{
+                            range: selection,
+                            text: text,
+                            forceMoveMarkers: true,
+                        }]);
+
+                        // カーソルを最後尾へ
+                        const newPosition = {
+                            lineNumber: selection.endLineNumber + (text.split('\n').length - 1),
+                            column: text.includes('\n') 
+                                ? text.split('\n').pop()!.length + 1 
+                                : selection.endColumn + text.length
+                        };
+                        ed.setPosition(newPosition);
+                        ed.focus();
+
+                    } catch (err) {
+                        console.error("クリップボードの読み取りに失敗しました:", err);
+                        // セキュリティ制限で読めなかった場合のフォールバック
+                        ed.trigger('source', 'editor.action.clipboardPasteAction', null);
                     }
                 }
             });
@@ -264,6 +330,15 @@ const MemoEditor = React.memo(
             });
         };
 
+        // アンマウント時にスクロール位置を保存
+        useEffect(() => {
+            return () => {
+                if (onScrollSave && scrollTopRef.current > 0) {
+                    onScrollSave(scrollTopRef.current);
+                }
+            };
+        }, []);
+
         const handleEditorChange = (value: string | undefined) => {
             if (value !== undefined) onChange(value);
         };
@@ -327,7 +402,8 @@ const MemoEditor = React.memo(
             prevProps.settings.fontSize === nextProps.settings.fontSize &&
             prevProps.settings.wordWrap === nextProps.settings.wordWrap &&
             prevProps.settings.tabSize === nextProps.settings.tabSize &&
-            prevProps.settings.theme === nextProps.settings.theme
+            prevProps.settings.theme === nextProps.settings.theme &&
+            prevProps.initialScrollTop === nextProps.initialScrollTop
         );
     }
 );

@@ -7,6 +7,7 @@ import MemoEditor from "@/components/Editor";
 import StatusBar from "@/components/StatusBar";
 import SettingsDialog, { AppSettings, DEFAULT_SETTINGS } from "@/components/SettingsDialog";
 import SaveConfirmDialog from "@/components/SaveConfirmDialog";
+import { DownloadProgressWidget } from "@/components/AiAssistantDialog";
 import {
   Group as PanelGroup,
   Panel,
@@ -52,6 +53,8 @@ interface SessionData {
   activeTabId: string;
   settings: AppSettings;
   tabCounter: number;
+  aiEnabled?: boolean;
+  scrollPositions?: Record<string, number>;
 }
 
 const SESSION_KEY = "ahme-session";
@@ -172,10 +175,23 @@ export default function Home() {
   const [cursorLine, setCursorLine] = useState(1);
   const [cursorColumn, setCursorColumn] = useState(1);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState(true);
+  const [aiEnabled, setAiEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const session = loadSession();
+    return session?.aiEnabled ?? true;
+  });
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [replaceTrigger, setReplaceTrigger] = useState(0);
   const [closingTabId, setClosingTabId] = useState<string | null>(null);
+
+  // --- スクロール位置の管理 ---
+  const [scrollPositions, setScrollPositions] = useState<Record<string, number>>(() => {
+    if (typeof window === "undefined") return {};
+    const session = loadSession();
+    return session?.scrollPositions ?? {};
+  });
+  const scrollPositionsRef = useRef(scrollPositions);
+  scrollPositionsRef.current = scrollPositions;
 
   // --- アクティブタブ取得 ---
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
@@ -203,9 +219,11 @@ export default function Home() {
   const tabsRef = useRef(tabs);
   const activeTabIdRef = useRef(activeTabId);
   const settingsRef = useRef(settings);
+  const aiEnabledRef = useRef(aiEnabled);
   tabsRef.current = tabs;
   activeTabIdRef.current = activeTabId;
   settingsRef.current = settings;
+  aiEnabledRef.current = aiEnabled;
 
   useEffect(() => {
     const doSave = () => {
@@ -214,6 +232,8 @@ export default function Home() {
         activeTabId: activeTabIdRef.current,
         settings: settingsRef.current,
         tabCounter: 0,
+        aiEnabled: aiEnabledRef.current,
+        scrollPositions: scrollPositionsRef.current,
       });
     };
 
@@ -361,7 +381,10 @@ export default function Home() {
     try {
       const firstLine = tab.content.split("\n")[0].trim();
       const defaultName = (firstLine.length > 0 ? firstLine.slice(0, 20) : "無題") + ".txt";
-      const filePath = await saveFileDialog(defaultName);
+      // ファイルのディレクトリがあればそれを初期パスに
+      const dirPath = tab.filePath ? tab.filePath.split('/').slice(0, -1).join('/') : undefined;
+      const defaultPath = dirPath ? `${dirPath}/${defaultName}` : defaultName;
+      const filePath = await saveFileDialog(defaultPath);
       if (!filePath) return false;
 
       await writeTextFile(filePath, tab.content);
@@ -551,6 +574,10 @@ export default function Home() {
                       onCursorChange={handleCursorChange}
                       showSearch={searchTrigger}
                       showReplace={replaceTrigger}
+                      initialScrollTop={scrollPositions[activeTab.id] ?? 0}
+                      onScrollSave={(scrollTop) => {
+                        setScrollPositions(prev => ({ ...prev, [activeTab.id]: scrollTop }));
+                      }}
                     />
                   )}
                 </div>
@@ -599,6 +626,9 @@ export default function Home() {
           onDiscard={handleConfirmDiscard}
           onCancel={handleConfirmCancel}
         />
+
+        {/* ダウンロード進捗フローティングウィジェット */}
+        <DownloadProgressWidget />
       </div>
     </EditorProvider>
   );

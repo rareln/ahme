@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2, Globe, Image as ImageIcon, Menu } from "lucide-react";
+import { Send, Bot, User, Trash2, ChevronDown, AlertCircle, RefreshCw, Paperclip, X, FileText, Loader2, Globe, Image as ImageIcon, Menu, Settings2 } from "lucide-react";
 import { useEditorContext } from "./EditorContext";
+import { APP_INFO } from "./config/constants";
+import AiAssistantDialog, { getEffectivePrompt } from "./AiAssistantDialog";
 
 interface Message {
     role: "user" | "assistant" | "system";
@@ -445,6 +447,8 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     });
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isAssistantDialogOpen, setIsAssistantDialogOpen] = useState(false);
+    const [promptVersion, setPromptVersion] = useState(0);
 
     // ── 履歴の永続化 ──
     const loadHistory = useCallback(async () => {
@@ -836,7 +840,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         abortControllerRef.current = new AbortController();
 
         try {
-            const systemPrompt = "あなたはAHMEというエディタのAIアシスタントです。回答は必ず「日本語」で行ってください。絶対に英語を使わないでください。親しみやすく、丁寧な敬語を使ってください。";
+            const systemPrompt = getEffectivePrompt("BASE");
 
             // ── Web検索（有効時のみ、3秒タイムアウト） ──
             let searchContext = "";
@@ -1081,10 +1085,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         <Menu size={20} />
                     </button>
 
-                    <div className="flex items-center gap-2 text-ahme-text-primary">
-                        <Bot size={20} className="text-ahme-primary-text" />
-                        <span className="font-bold text-base whitespace-nowrap">AI Assistant</span>
-                    </div>
+                    <button onClick={() => setIsAssistantDialogOpen(true)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-ahme-surface-border bg-ahme-bg hover:border-ahme-primary-ring hover:bg-ahme-surface-hover transition-all cursor-pointer group" title="システムプロンプト編集・モデルダウンロード"><Bot size={18} className="text-ahme-primary-text group-hover:text-white transition-colors" /><span className="font-bold text-sm text-ahme-text-primary group-hover:text-white transition-colors whitespace-nowrap">{APP_INFO.ASSISTANT_NAME}</span><Settings2 size={12} className="text-ahme-text-faint group-hover:text-ahme-primary-text transition-colors" /></button>
                     <div className="flex items-center gap-2 bg-ahme-surface-secondary/50 px-3 py-1.5 rounded border border-ahme-surface-border">
                         <button onClick={() => setFontSize(Math.max(10, fontSize - 1))} className="text-ahme-text-muted hover:text-white transition-colors text-base font-bold leading-none px-1" title="文字を小さく">-</button>
                         <span className="text-sm font-bold text-ahme-text-secondary w-6 text-center select-none">{fontSize}</span>
@@ -1383,6 +1384,13 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     )}
                 </div>
             </div>
+
+            {/* AI Assistant設定ダイアログ */}
+            <AiAssistantDialog
+                isOpen={isAssistantDialogOpen}
+                onClose={() => setIsAssistantDialogOpen(false)}
+                onPromptsChanged={() => setPromptVersion(v => v + 1)}
+            />
         </div >
     );
 }

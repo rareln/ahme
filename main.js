@@ -88,7 +88,7 @@ async function createWindow() {
             label: '編集',
             submenu: [
                 { label: '元に戻す', accelerator: 'CmdOrCtrl+Z', click: () => win.webContents.send('menu:undo') },
-                { label: 'やり直し', accelerator: 'CmdOrCtrl+Y', click: () => win.webContents.send('menu:redo') }, 
+                { label: 'やり直し', accelerator: 'CmdOrCtrl+Y', click: () => win.webContents.send('menu:redo') },
                 { type: 'separator' },
                 { label: '切り取り', role: 'cut' },
                 { label: 'コピー', role: 'copy' },
@@ -118,9 +118,13 @@ async function createWindow() {
     Menu.setApplicationMenu(menu);
 }
 
-// IPC ハンドラの設定
+// 最後に開いた/保存したディレクトリを記憶
+let lastOpenDir = null;
+let lastSaveDir = null;
+
 ipcMain.handle('dialog:openFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
+        defaultPath: lastOpenDir || undefined,
         properties: ['openFile'],
         filters: [
             { name: 'テキストファイル', extensions: ['txt', 'md', 'json', 'html', 'css', 'js', 'ts', 'tsx', 'py', 'rs', 'toml', 'yaml', 'yml', 'xml', 'csv'] },
@@ -128,18 +132,25 @@ ipcMain.handle('dialog:openFile', async () => {
         ]
     });
     if (canceled) return null;
+    lastOpenDir = path.dirname(filePaths[0]);
     return filePaths[0];
 });
 
 ipcMain.handle('dialog:getSavePath', async (event, { defaultPath }) => {
+    let resolvedDefault = defaultPath;
+    if (defaultPath && !path.isAbsolute(defaultPath) && lastSaveDir) {
+        resolvedDefault = path.join(lastSaveDir, defaultPath);
+    }
     const { canceled, filePath } = await dialog.showSaveDialog({
-        defaultPath: defaultPath,
+        defaultPath: resolvedDefault || defaultPath,
         filters: [
             { name: 'テキストファイル', extensions: ['txt', 'md', 'json', 'html', 'css', 'js', 'ts', 'tsx'] },
             { name: 'すべてのファイル', extensions: ['*'] }
         ]
     });
-    return canceled ? null : filePath;
+    if (canceled) return null;
+    lastSaveDir = path.dirname(filePath);
+    return filePath;
 });
 
 ipcMain.handle('dialog:saveFile', async (event, { content, filePath }) => {
@@ -154,8 +165,12 @@ ipcMain.handle('dialog:saveFile', async (event, { content, filePath }) => {
 });
 
 ipcMain.handle('dialog:saveAsFile', async (event, { content, defaultPath }) => {
+    let resolvedDefault = defaultPath;
+    if (defaultPath && !path.isAbsolute(defaultPath) && lastSaveDir) {
+        resolvedDefault = path.join(lastSaveDir, defaultPath);
+    }
     const { canceled, filePath } = await dialog.showSaveDialog({
-        defaultPath: defaultPath,
+        defaultPath: resolvedDefault || defaultPath,
         filters: [
             { name: 'テキストファイル', extensions: ['txt', 'md', 'json', 'html', 'css', 'js', 'ts', 'tsx'] },
             { name: 'すべてのファイル', extensions: ['*'] }
@@ -170,6 +185,7 @@ ipcMain.handle('dialog:saveAsFile', async (event, { content, defaultPath }) => {
 
     try {
         await fs.writeFile(finalPath, content, 'utf8');
+        lastSaveDir = path.dirname(finalPath);
         return finalPath;
     } catch (error) {
         console.error('Save As error in main process:', error);
@@ -338,11 +354,13 @@ ipcMain.on('show-context-menu', (event) => {
     const template = [
         { role: 'cut', label: '切り取り' },
         { role: 'copy', label: 'コピー' },
-        { role: 'paste', label: '貼り付け' },
+        { role: 'paste', label: '貼り付け' }, // ← シンプルにこれだけに戻す
         { type: 'separator' },
         { role: 'selectAll', label: 'すべて選択' }
     ];
     const menu = Menu.buildFromTemplate(template);
     const win = BrowserWindow.fromWebContents(event.sender);
-    menu.popup({ window: win });
+    if (win) {
+        menu.popup({ window: win });
+    }
 });
