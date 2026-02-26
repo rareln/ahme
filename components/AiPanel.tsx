@@ -507,14 +507,15 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     }, [messages, currentChatId, currentFilePath, saveHistory]);
 
     // 自動タイトル生成: メッセージが2個（1往復）かつタイトルが初期値の場合
-    useEffect(() => {
-        if (messages.length === 2 && messages[1].role === "assistant") {
-            const currentEntry = historyList.find(h => h.id === currentChatId);
-            if (currentEntry && currentEntry.title === "新しいチャット") {
-                generateTitleBackground(messages);
-            }
-        }
-    }, [messages, currentChatId, historyList]);
+    //useEffect(() => {
+    //    if (messages.length === 2 && messages[1].role === "assistant") {
+    //        const currentEntry = historyList.find(h => h.id === currentChatId);
+    //        if (currentEntry && currentEntry.title === "新しいチャット") {
+    //            titleRequestedRef.current = currentChatId;
+    //            generateTitleBackground(messages);
+    //        }
+    //    }
+    //}, [messages, currentChatId, historyList]);
 
     const generateTitleBackground = async (chatMessages: Message[]) => {
         try {
@@ -969,6 +970,17 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             // 送信成功後に添付をクリア
             setAttachedFiles([]);
             setAttachedImages([]);
+
+            // ★★★★ ここから追加 ★★★★
+            // AIの返信が完了した時点で、メッセージがちょうど2個（1往復目）ならタイトルを生成する
+            // ※ setMessages は非同期なので、手元にある最新の配列 (newMessages) に今回の回答を足して判定します
+            const finalMessages = [...newMessages, { role: "assistant", content: assistantContent }];
+            if (finalMessages.length === 2) {
+                // historyList の最新状態をチェックしなくても、「1往復目」という事実だけで生成を決定してOK
+                generateTitleBackground(finalMessages as Message[]);
+            }
+            // ★★★★ 追加ここまで ★★★★
+
         } catch (err: any) {
             if (err.name === "AbortError") {
                 console.log("Stream aborted");
@@ -1042,13 +1054,21 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                             : 'hover:bg-ahme-surface text-ahme-text-muted border border-transparent'}
                                     `}
                                 >
-                                    <div className="flex items-center gap-2 overflow-hidden">
+                                    <div className="flex items-center gap-2 overflow-hidden w-full pr-2">
                                         {isRelated ? (
                                             <span title="現在開いているファイルに関連" className="text-ahme-primary-text shrink-0">📝</span>
                                         ) : (
                                             <Bot size={14} className="opacity-50 shrink-0" />
                                         )}
-                                        <span className="truncate font-medium">{hist.title}</span>
+                                        <div className="flex flex-col min-w-0 flex-1">
+                                            <span className="truncate font-medium">{hist.title}</span>
+                                            {/* ★ 追加: 関連ファイル名がある場合はタイトルの下に小さく表示 */}
+                                            {hist.relatedFilePath && (
+                                                <span className="truncate text-[9px] text-ahme-text-faint/80 mt-0.5" title={hist.relatedFilePath}>
+                                                    📄 {hist.relatedFilePath.split(/[/\\]/).pop()}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <button
                                         className="opacity-0 group-hover:opacity-100 p-1 hover:text-ahme-error-text transition-opacity"
