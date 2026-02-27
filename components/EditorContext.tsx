@@ -102,7 +102,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     const [editorReady, setEditorReady] = useState(false);
 
     const registerEditor = useCallback((editor: any, monaco: any) => {
-        console.log("[EditorContext] registerEditor called", !!editor, !!monaco);
+
         editorRef.current = editor;
         monacoRef.current = monaco;
         setEditorReady(true);
@@ -110,7 +110,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
 
         // エディタが破棄された場合に自動的に登録解除
         editor.onDidDispose(() => {
-            console.log("[EditorContext] Editor disposed");
+
             if (editorRef.current === editor) {
                 editorRef.current = null;
                 monacoRef.current = null;
@@ -120,7 +120,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const unregisterEditor = useCallback(() => {
-        console.log("[EditorContext] unregisterEditor called");
+
         editorRef.current = null;
         monacoRef.current = null;
         setEditorReady(false);
@@ -296,7 +296,7 @@ export function EditorProvider({ children }: { children: React.ReactNode }) {
         editor.focus();
         editor.revealLineInCenter(endLine);
 
-        console.log("[EditorContext] insertWithHighlight: success, lines", startLine, "→", endLine);
+
     }, [cleanupAiUI, editorReady]);
 
     return (

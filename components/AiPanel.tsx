@@ -67,7 +67,7 @@ function resizeImageToBase64(file: File, maxEdge = 1024): Promise<{ base64: stri
                 // data:image/jpeg;base64,XXXX → split で確実にプレフィックス除去
                 const parts = dataUrl.split(",");
                 const base64 = parts.length > 1 ? parts.slice(1).join(",") : parts[0];
-                console.log(`[AiPanel] Image resized: ${width}x${height}, base64 length: ${base64.length}, starts with: ${base64.substring(0, 20)}`);
+
                 resolve({ base64, preview: dataUrl });
             };
             img.onerror = reject;
@@ -506,16 +506,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         });
     }, [messages, currentChatId, currentFilePath, saveHistory]);
 
-    // 自動タイトル生成: メッセージが2個（1往復）かつタイトルが初期値の場合
-    //useEffect(() => {
-    //    if (messages.length === 2 && messages[1].role === "assistant") {
-    //        const currentEntry = historyList.find(h => h.id === currentChatId);
-    //        if (currentEntry && currentEntry.title === "新しいチャット") {
-    //            titleRequestedRef.current = currentChatId;
-    //            generateTitleBackground(messages);
-    //        }
-    //    }
-    //}, [messages, currentChatId, historyList]);
+
 
     const generateTitleBackground = async (chatMessages: Message[]) => {
         try {
@@ -566,7 +557,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         setAttachedImages([]);
         setCurrentChatId(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
-        // スマホや狭い画面用などで、新規チャット時にサイドバーを閉じる場合はここで setIsSidebarOpen(false) など
+
     };
 
     const handleSelectHistory = (id: string) => {
@@ -581,7 +572,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             setAttachedFiles([]);
             setAttachedImages([]);
 
-            // if (window.innerWidth < 768) setIsSidebarOpen(false); // スマホ対応の場合
+
         }
     };
 
@@ -602,7 +593,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         setIsLoadingModels(true);
         setError(null);
         try {
-            console.log("[AiPanel] Fetching models...");
+
             const response = await fetch("/api/models", { cache: "no-store" });
 
             if (!response.ok) {
@@ -703,7 +694,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         preview,
                         size: file.size,
                     }]);
-                    console.log(`[AiPanel] Image attached: ${file.name} (resized for Ollama)`);
+
                 } catch (err: any) {
                     console.error(`[AiPanel] Image resize failed: ${err.message}`);
                 }
@@ -820,7 +811,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         const userText = inputValue;
         const currentAttachments = attachedFiles.filter(f => !f.error && f.text);
         const currentImages = [...attachedImages];
-        console.log(`[AiPanel] handleSend: ${currentAttachments.length} files, ${currentImages.length} images`);
+
 
         // ユーザーメッセージに添付情報を表示
         const attachInfo: string[] = [];
@@ -864,12 +855,12 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             .map((r: any, i: number) => `${i + 1}. [${r.title}](${r.url})\n${r.content}`)
                             .join("\n\n");
                         searchContext = `\n\n--- Web検索結果 ---\n${searchData.answer ? `要約: ${searchData.answer}\n\n` : ""}${resultsText}\n`;
-                        console.log(`[AiPanel] Web search: ${searchData.results.length} results`);
+
                     } else {
-                        console.log(`[AiPanel] Web search skipped: ${searchData.reason || "no results"}`);
+
                     }
                 } catch (searchErr: any) {
-                    console.log(`[AiPanel] Web search error (skipping): ${searchErr.message}`);
+
                 } finally {
                     setIsSearching(false);
                 }
@@ -907,7 +898,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 fullContext = `以下のドキュメントの内容に基づいて回答してください。${searchContext}${attachmentContext}\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
             }
 
-            console.log(`[AiPanel] fullContext length: ${fullContext.length}, hasImages: ${currentImages.length > 0}`);
+
 
             const payload: any = {
                 model: selectedModel || "llama3",
@@ -930,7 +921,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     return b64;
                 });
                 payload.images = cleanBase64;
-                console.log(`[AiPanel] Sending ${cleanBase64.length} image(s), base64 lengths: ${cleanBase64.map(b => b.length)}, first50: ${cleanBase64.map(b => b.substring(0, 50))}`);
+
             }
 
             const response = await fetch("/api/chat", {
@@ -987,7 +978,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
 
         } catch (err: any) {
             if (err.name === "AbortError") {
-                console.log("Stream aborted");
+
             } else {
                 console.error("Chat Error:", err);
                 setError(err.message || "予期せぬエラーが発生しました。");
