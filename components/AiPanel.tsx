@@ -643,12 +643,16 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         localStorage.setItem('ahme-chat-font-size', String(fontSize));
     }, [fontSize]);
 
-    // 入力欄の高さを自動調整するエフェクト
+    // 入力欄の高さを自動調整するエフェクト（空文字時はリセットして2行幅を維持）
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            textarea.style.height = "auto";
-            textarea.style.height = `${textarea.scrollHeight}px`;
+            if (!inputValue) {
+                textarea.style.height = "";
+            } else {
+                textarea.style.height = "auto";
+                textarea.style.height = `${textarea.scrollHeight}px`;
+            }
         }
     }, [inputValue]);
 
@@ -1152,7 +1156,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             </div>
 
             {/* メッセージエリア + テキスト選択挿入ボタン */}
-            <div className="flex-1 overflow-hidden relative">
+            <div className="flex-1 overflow-hidden relative" onClick={() => isSidebarOpen && setIsSidebarOpen(false)}>
                 <div
                     ref={scrollRef}
                     className="h-full overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-ahme-surface-hover scrollbar-track-transparent select-text"
@@ -1260,6 +1264,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     ? "border-ahme-primary-ring bg-ahme-primary-muted shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]"
                     : "border-ahme-surface-border bg-ahme-surface-secondary/50"
                     }`}
+                onClick={() => isSidebarOpen && setIsSidebarOpen(false)}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -1321,6 +1326,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 <div className="relative flex flex-col gap-2">
                     <textarea
                         ref={textareaRef}
+                        rows={2}
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyDown={(e) => {
@@ -1345,7 +1351,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         }
                         disabled={isGenerating}
                         style={{ fontSize: `${fontSize}px` }}
-                        className="w-full bg-ahme-input border border-ahme-input-border rounded-lg p-3 pr-20 text-ahme-text-primary focus:outline-none focus:ring-1 focus:ring-ahme-input-focus transition-all resize-none min-h-[80px] max-h-[300px] overflow-y-auto disabled:opacity-50"
+                        className="w-full bg-ahme-input border border-ahme-input-border rounded-lg p-3 pr-20 text-ahme-text-primary focus:outline-none focus:ring-1 focus:ring-ahme-input-focus transition-all resize-none min-h-[2.5rem] max-h-[300px] overflow-y-auto disabled:opacity-50"
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
                         {/* 📎 ファイル添付ボタン */}
