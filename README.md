@@ -77,10 +77,10 @@ npm install
 プロジェクトのルートディレクトリに .env.local ファイルを作成し、必要なAPIキーを設定します。
 ※注意: .env.local には機密情報が含まれるため、絶対にGitへコミット（公開）しないでください。
 
-# OllamaのAPI URL（デフォルト）
+OllamaのAPI URL（デフォルト）
 OLLAMA_API_URL=http://localhost:11434
 
-# Web検索を使用する場合のTavily APIキー
+Web検索を使用する場合のTavily APIキー
 TAVILY_API_KEY=tvly-your_api_key_here
 
 4. 開発モードでの起動
