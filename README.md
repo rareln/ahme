@@ -60,8 +60,9 @@ ahme/
 ├── preload.js            # Electron プリロードスクリプト (セキュアなIPC通信)
 ├── package.json          # 依存関係と起動スクリプト
 └── .env.local            # 環境変数 (※Git管理外)
+```
 
-🚀 セットアップと起動 (Setup & Run)
+## 🚀 セットアップと起動 (Setup & Run)
 
 1. 前提条件の準備
 Ollamaがインストールされ、対象のモデル（デフォルトでは gemma3:12b）がプルされていることを確認してください。
@@ -86,10 +87,10 @@ TAVILY_API_KEY=tvly-your_api_key_here
 Next.jsのローカルサーバーとElectronプロセスを同時に起動します。
 npm run dev:all
 
-📝 利用上の注意事項 (Notes)
+## 📝 利用上の注意事項 (Notes)
 本ソフトウェアは、個人的な執筆環境の最適化を目的として開発されたものです。予期せぬバグが発生する可能性がありますので、重要なデータは定期的にバックアップを取ることをお勧めします。
 
-📄 ライセンス (License)
+## 📄 ライセンス (License)
 Copyright (c) 2026 rareln
 Released under the MIT license
 https://opensource.org/licenses/mit-license.php
