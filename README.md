@@ -65,25 +65,34 @@ ahme/
 ## 🚀 セットアップと起動 (Setup & Run)
 
 1. 前提条件の準備
+
 Ollamaがインストールされ、対象のモデル（デフォルトでは gemma3:12b）がプルされていることを確認してください。
+
 ollama run gemma3:12b
 
 2. リポジトリのクローンとインストール
+
 git clone [https://github.com/rareln/ahme.git](https://github.com/rareln/ahme.git)
+
 cd ahme
+
 npm install
 
 3. 環境変数の設定 (.env.local)
+
 プロジェクトのルートディレクトリに .env.local ファイルを作成し、必要なAPIキーを設定します。
 ※注意: .env.local には機密情報が含まれるため、絶対にGitへコミット（公開）しないでください。
 
 OllamaのAPI URL（デフォルト）
+
 OLLAMA_API_URL=http://localhost:11434
 
 Web検索を使用する場合のTavily APIキー
+
 TAVILY_API_KEY=tvly-your_api_key_here
 
 4. 開発モードでの起動
+
 Next.jsのローカルサーバーとElectronプロセスを同時に起動します。
 npm run dev:all
 
@@ -92,5 +101,7 @@ npm run dev:all
 
 ## 📄 ライセンス (License)
 Copyright (c) 2026 rareln
+
 Released under the MIT license
+
 https://opensource.org/licenses/mit-license.php
