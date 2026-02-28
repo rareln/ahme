@@ -74,7 +74,7 @@ ollama run gemma3:12b
 
 2. リポジトリのクローンとインストール  
 ```
-git clone [https://github.com/rareln/ahme.git](https://github.com/rareln/ahme.git)
+git clone https://github.com/rareln/ahme.git
 cd ahme
 npm install
 ```
