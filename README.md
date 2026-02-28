@@ -1,9 +1,12 @@
 # AHME (AI Hybrid Minimal Editor)
 
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![OS: Ubuntu](https://img.shields.io/badge/OS-Ubuntu%2024.04-orange.svg)
+
 AHME（読み方：アーム）は、「軽量・爆速・プライバシー重視」の哲学に基づいて開発された、ローカルAI統合型の究極の執筆コックピットです。
 ElectronとNext.jsのハイブリッド構成により、ネイティブアプリの軽快さとWeb技術の柔軟性を両立し、思考を一切止めないシームレスなUI/UXを実現しています。
 
-## 📖 開発背景 (Background)
+![AHME Screenshot](./assets/screenshot.png) ## 📖 開発背景 (Background)
 
 Ubuntu 24.04環境において、「直感的に使いやすく、かつ痒い所に手が届く」テキストエディタが見当たらなかったことが開発の出発点です。
 既存のGNOME Text Editorは日本語IMEとの相性（二重入力問題）があり、geditは未保存タブの記憶ができないといった課題がありました。
@@ -25,11 +28,11 @@ Ubuntu 24.04環境において、「直感的に使いやすく、かつ痒い�
   * 「3秒のハードタイムアウト」を備えた堅牢なWeb検索機能を搭載。AIが最新情報を取得しつつ、APIの遅延によってエディタがフリーズする事態を完全に防ぎます。
 * **⚡ 思考を止めないシームレスなUX (Monaco Editor拡張)**
   * **なぞって挿入:** チャットのAI回答を選択すると「エディタに挿入」ボタンが最前面に出現し、ワンクリックで本文へ反映。
-  * **AI補完（続きを執筆）:** エディタ本文内で文章を選択して右クリック「AI補完（続きを執筆）」を選択すると、AIが文脈を読み取り続きを執筆。採用可否を選択して反映。
+  * **AI補完（続きを執筆）:** エディタ本文内で文章を選択して右クリックし「AI補完（続きを執筆）」を選択すると、AIが文脈を読み取り続きを執筆。採用可否を選択して反映できます。
   * **テーマ完全対応:** ハードコーディングを排除したCSS変数管理により、AHME標準、ダーク、ライト、ハイコントラストなど、美しいテーマ切り替えが可能。
   * **状態記憶:** 未保存のタブ、文字サイズ、左右パネルの分割比率、エディタ閲覧箇所、ウインドウ位置を完全に記憶。次回起動時も一瞬で「いつもの環境」が復元されます。
   * **LLMモデルダウンロード:** 「AI Assistant」ボタンからOllama対応LLMモデルを直接ダウンロード可能です。
-  * **チャット履歴:** AIとのチャット履歴も保存されます。また、そのチャットがどのファイルと紐付いた会話かがわかるようになってます。
+  * **チャット履歴:** AIとのチャット履歴も保存されます（チャットとファイルとの紐付け表示あり）。
 
 ## 💻 動作環境 (Environment)
 
@@ -47,7 +50,7 @@ Ubuntu 24.04環境において、「直感的に使いやすく、かつ痒い�
 
 ## 📂 ディレクトリ構成 (Directory Structure)
 
-\`\`\`text
+```text
 ahme/
 ├── app/                  # Next.js App Router (ページ、CSS、APIルート)
 ├── components/           # Reactコンポーネント (Header, Editor, Settings等)
@@ -57,45 +60,36 @@ ahme/
 ├── preload.js            # Electron プリロードスクリプト (セキュアなIPC通信)
 ├── package.json          # 依存関係と起動スクリプト
 └── .env.local            # 環境変数 (※Git管理外)
-\`\`\`
 
-## 🚀 セットアップと起動 (Setup & Run)
+🚀 セットアップと起動 (Setup & Run)
 
-### 1. 前提条件の準備
-Ollamaがインストールされ、対象のモデル（デフォルトでは `gemma3:12b`）がプルされていることを確認してください。
-\`\`\`bash
+1. 前提条件の準備
+Ollamaがインストールされ、対象のモデル（デフォルトでは gemma3:12b）がプルされていることを確認してください。
 ollama run gemma3:12b
-\`\`\`
 
-### 2. リポジトリのクローンとインストール
-\`\`\`bash
-git clone https://github.com/yourusername/ahme.git
+2. リポジトリのクローンとインストール
+git clone [https://github.com/rareln/AHME.git](https://github.com/rareln/AHME.git)
 cd ahme
 npm install
-\`\`\`
 
-### 3. 環境変数の設定 (`.env.local`)
-プロジェクトのルートディレクトリに `.env.local` ファイルを作成し、必要なAPIキーを設定します。
-**※注意: `.env.local` には機密情報が含まれるため、絶対にGitへコミット（公開）しないでください。**
+3. 環境変数の設定 (.env.local)
+プロジェクトのルートディレクトリに .env.local ファイルを作成し、必要なAPIキーを設定します。
+※注意: .env.local には機密情報が含まれるため、絶対にGitへコミット（公開）しないでください。
 
-\`\`\`env
 # OllamaのAPI URL（デフォルト）
 OLLAMA_API_URL=http://localhost:11434
 
 # Web検索を使用する場合のTavily APIキー
 TAVILY_API_KEY=tvly-your_api_key_here
-\`\`\`
 
-### 4. 開発モードでの起動
+4. 開発モードでの起動
 Next.jsのローカルサーバーとElectronプロセスを同時に起動します。
-\`\`\`bash
 npm run dev:all
-\`\`\`
 
-## 📝 利用上の注意事項 (Notes)
+📝 利用上の注意事項 (Notes)
+本ソフトウェアは、個人的な執筆環境の最適化を目的として開発されたものです。予期せぬバグが発生する可能性がありますので、重要なデータは定期的にバックアップを取ることをお勧めします。
 
-* 本ソフトウェアは、個人的な執筆環境の最適化を目的として開発されたものです。予期せぬバグが発生する可能性がありますので、重要なデータは定期的にバックアップを取ることをお勧めします。
-
-## 📄 ライセンス (License)
-
-[MIT License](LICENSE)
+📄 ライセンス (License)
+Copyright (c) 2026 rareln
+Released under the MIT license
+https://opensource.org/licenses/mit-license.php
