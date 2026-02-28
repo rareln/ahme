@@ -6,7 +6,9 @@
 AHME（読み方：アーム）は、「軽量・爆速・プライバシー重視」の哲学に基づいて開発された、ローカルAI統合型の究極の執筆コックピットです。
 ElectronとNext.jsのハイブリッド構成により、ネイティブアプリの軽快さとWeb技術の柔軟性を両立し、思考を一切止めないシームレスなUI/UXを実現しています。
 
-![AHME Screenshot](./assets/screenshot.png) ## 📖 開発背景 (Background)
+![AHME Screenshot](./assets/screenshot.png) 
+
+## 📖 開発背景 (Background)
 
 Ubuntu 24.04環境において、「直感的に使いやすく、かつ痒い所に手が届く」テキストエディタが見当たらなかったことが開発の出発点です。
 既存のGNOME Text Editorは日本語IMEとの相性（二重入力問題）があり、geditは未保存タブの記憶ができないといった課題がありました。
@@ -64,44 +66,44 @@ ahme/
 
 ## 🚀 セットアップと起動 (Setup & Run)
 
-1. 前提条件の準備
-
-Ollamaがインストールされ、対象のモデル（デフォルトでは gemma3:12b）がプルされていることを確認してください。
-
+1. 前提条件の準備  
+Ollamaがインストールされ、対象のモデル（デフォルトでは gemma3:12b）がプルされていることを確認してください。  
+```
 ollama run gemma3:12b
+```
 
-2. リポジトリのクローンとインストール
-
+2. リポジトリのクローンとインストール  
+```
 git clone [https://github.com/rareln/ahme.git](https://github.com/rareln/ahme.git)
-
 cd ahme
-
 npm install
+```
 
 3. 環境変数の設定 (.env.local)
 
 プロジェクトのルートディレクトリに .env.local ファイルを作成し、必要なAPIキーを設定します。
 ※注意: .env.local には機密情報が含まれるため、絶対にGitへコミット（公開）しないでください。
 
-OllamaのAPI URL（デフォルト）
-
+OllamaのAPI URL（デフォルト）  
+```
 OLLAMA_API_URL=http://localhost:11434
+```
 
-Web検索を使用する場合のTavily APIキー
-
+Web検索を使用する場合のTavily APIキー  
+```
 TAVILY_API_KEY=tvly-your_api_key_here
+```
 
-4. 開発モードでの起動
-
-Next.jsのローカルサーバーとElectronプロセスを同時に起動します。
+4. 開発モードでの起動  
+Next.jsのローカルサーバーとElectronプロセスを同時に起動します。  
+```
 npm run dev:all
+```
 
 ## 📝 利用上の注意事項 (Notes)
 本ソフトウェアは、個人的な執筆環境の最適化を目的として開発されたものです。予期せぬバグが発生する可能性がありますので、重要なデータは定期的にバックアップを取ることをお勧めします。
 
 ## 📄 ライセンス (License)
-Copyright (c) 2026 rareln
-
-Released under the MIT license
-
+Copyright (c) 2026 rareln  
+Released under the MIT license  
 https://opensource.org/licenses/mit-license.php
