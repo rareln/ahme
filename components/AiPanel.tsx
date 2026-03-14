@@ -40,12 +40,12 @@ interface AttachedFile {
 interface AttachedImage {
     id: string;
     name: string;
-    base64: string;   // Ollama に送る純粋な Base64（data: prefix なし）
-    preview: string;  // プレビュー用 data URL
+    base64: string;
+    preview: string;
     size: number;
 }
 
-/** 画像を Canvas でリサイズし Base64 を返す（長辺1024px） */
+/** 画像を Canvas でリサイズし Base64 を返す */
 function resizeImageToBase64(file: File, maxEdge = 1024): Promise<{ base64: string; preview: string }> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -64,7 +64,6 @@ function resizeImageToBase64(file: File, maxEdge = 1024): Promise<{ base64: stri
                 const ctx = canvas.getContext("2d")!;
                 ctx.drawImage(img, 0, 0, width, height);
                 const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-                // data:image/jpeg;base64,XXXX → split で確実にプレフィックス除去
                 const parts = dataUrl.split(",");
                 const base64 = parts.length > 1 ? parts.slice(1).join(",") : parts[0];
 
@@ -128,14 +127,13 @@ function parseMessageContent(content: string): ContentBlock[] {
     return blocks;
 }
 
-/** URL を検出してリンク化するヘルパー */
 const URL_REGEX = /(https?:\/\/[^\s<>()"']+)/g;
 
 function renderTextWithLinks(text: string, fontSize: number): React.ReactNode[] {
     const parts = text.split(URL_REGEX);
     return parts.map((part, i) => {
         if (URL_REGEX.test(part)) {
-            URL_REGEX.lastIndex = 0; // reset regex state
+            URL_REGEX.lastIndex = 0;
             const handleClick = (e: React.MouseEvent) => {
                 e.preventDefault();
                 const api = (window as any).electronAPI;
@@ -161,7 +159,6 @@ function renderTextWithLinks(text: string, fontSize: number): React.ReactNode[] 
     });
 }
 
-/** コードブロック表示コンポーネント */
 function CodeBlockWithInsert({
     code,
     language,
@@ -213,7 +210,6 @@ function CodeBlockWithInsert({
     );
 }
 
-/** メッセージ内容をレンダリング */
 function MessageContent({
     content,
     fontSize,
@@ -249,29 +245,24 @@ function MessageContent({
     );
 }
 
-/** テキスト選択時のフローティング挿入ボタン */
 function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
     const { insertWithHighlight } = useEditorContext();
     const [visible, setVisible] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [selectedText, setSelectedText] = useState("");
 
-    // 選択範囲の変更を監視して表示・非表示を切り替え
     const updateVisibility = useCallback(() => {
         const sel = window.getSelection();
         const text = sel?.toString()?.trim();
 
-        // 選択テキストがない、または短すぎる場合は非表示
         if (!text || text.length < 1) {
             setVisible(false);
             return;
         }
 
-        // 選択範囲の座標を取得 (Viewport基準)
         const range = sel!.getRangeAt(0);
         const rect = range.getBoundingClientRect();
 
-        // コンテナ内かどうかを判定（エディタ等での誤表示防止）
         if (!containerRef.current || !sel || !sel.anchorNode || !containerRef.current.contains(sel.anchorNode)) {
             return;
         }
@@ -279,10 +270,8 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
         if (rect.width === 0 || rect.height === 0) return;
 
         setSelectedText(text);
-        // Fixed配置なので Viewport 座標をそのまま使用
-        // 少し上に表示 (Y - 40px), 左端合わせ (X)
         setPosition({
-            x: rect.left + (rect.width / 2) - 60, // 中央寄せ試行 (ボタン幅120px想定)
+            x: rect.left + (rect.width / 2) - 60,
             y: rect.top - 40,
         });
         setVisible(true);
@@ -290,16 +279,11 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
 
     useEffect(() => {
         const handleDocumentMouseUp = (e: MouseEvent) => {
-            // 左クリックのみ反応
             if (e.button !== 0) return;
-            // 少し遅延させて選択状態を確定させる
             setTimeout(updateVisibility, 10);
         };
 
         const handleDocumentMouseDown = (e: MouseEvent) => {
-            // ここでは即座に隠さず、次のMouseUpやSelectionChangeで判定する
-            // ただし、選択解除（クリック）を検知するためにチェックは必要
-            // ボタン自体のクリックは stopPropagation されるのでここには来ない
             setTimeout(() => {
                 const sel = window.getSelection();
                 if (!sel || sel.isCollapsed) {
@@ -308,9 +292,7 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
             }, 10);
         };
 
-        // スクロール時も位置再計算あるいは非表示にする
         const handleScroll = () => {
-            // スクロール中は非表示にするのが安全（追従は重い）
             setVisible(false);
         };
 
@@ -340,7 +322,6 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
             className="fixed z-[99999]"
             style={{ left: position.x, top: position.y }}
             onMouseDown={(e) => {
-                // ボタンクリックで選択範囲が解除されないようにする (超重要)
                 e.preventDefault();
                 e.stopPropagation();
             }}
@@ -358,14 +339,12 @@ function SelectionInsertButton({ containerRef }: { containerRef: React.RefObject
     );
 }
 
-/** ファイルサイズのフォーマット */
 function formatFileSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-/** 添付ファイルチップ */
 function AttachmentChip({
     file,
     onRemove,
@@ -413,13 +392,20 @@ function AttachmentChip({
 }
 
 export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps) {
+    // ★ 追加：マウント状態の管理（ハイドレーション対策）
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => { setIsMounted(true); }, []);
+
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
-    const [fontSize, setFontSize] = useState(() => {
-        if (typeof window === 'undefined') return 14;
+    
+    // ★ 修正：フォントサイズの初期化を遅延させる（ハイドレーション対策）
+    const [fontSize, setFontSize] = useState(14);
+    useEffect(() => {
         const saved = localStorage.getItem('ahme-chat-font-size');
-        return saved ? Math.max(10, Math.min(30, parseInt(saved, 10) || 14)) : 14;
-    });
+        if (saved) setFontSize(Math.max(10, Math.min(30, parseInt(saved, 10) || 14)));
+    }, []);
+
     const [availableModels, setAvailableModels] = useState<string[]>([]);
     const [selectedModel, setSelectedModel] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
@@ -429,19 +415,15 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     const abortControllerRef = useRef<AbortController | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // ── 添付ファイル State ──
     const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
     const [isDragOver, setIsDragOver] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // ── 画像添付 State ──
     const [attachedImages, setAttachedImages] = useState<AttachedImage[]>([]);
 
-    // ── Web検索 State ──
     const [webSearchEnabled, setWebSearchEnabled] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
 
-    // ── 履歴 State ──
     const [historyList, setHistoryList] = useState<ChatHistory[]>([]);
     const [currentChatId, setCurrentChatId] = useState<string>(() => {
         return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -450,7 +432,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     const [isAssistantDialogOpen, setIsAssistantDialogOpen] = useState(false);
     const [promptVersion, setPromptVersion] = useState(0);
 
-    // ── 履歴の永続化 ──
     const loadHistory = useCallback(async () => {
         try {
             const api = (window as any).electronAPI;
@@ -478,9 +459,8 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         loadHistory();
     }, [loadHistory]);
 
-    // メッセージが更新されるたびに、現在の履歴エントリを更新して保存
     useEffect(() => {
-        if (messages.length === 0) return; // 空の時は保存しない（Clear後など）
+        if (messages.length === 0) return;
 
         setHistoryList(prev => {
             const existingIdx = prev.findIndex(h => h.id === currentChatId);
@@ -500,20 +480,17 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 newList.unshift(newEntry);
             }
 
-            // 永続化をトリガー (非同期)
             saveHistory(newList);
             return newList;
         });
     }, [messages, currentChatId, currentFilePath, saveHistory]);
-
-
 
     const generateTitleBackground = async (chatMessages: Message[]) => {
         try {
             const textToSummarize = chatMessages.map(m => `${m.role}: ${m.content}`).join("\n");
             const prompt = "以下の会話を15文字以内で要約してタイトルを付けてください。タイトルのみ出力してください。バッククォートなどの装飾は不要です。:\n\n" + textToSummarize;
 
-            const res = await fetch("/api/chat", {
+            const res = await fetch("http://localhost:11434/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -532,7 +509,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 if (data.message?.content) newTitle = data.message.content.trim();
                 else if (data.choices?.[0]?.message?.content) newTitle = data.choices[0].message.content.trim();
 
-                // タイトル中の不要な記号（改行、バッククォートなど）を除去
                 newTitle = newTitle.replace(/[`"'*]/g, "").split("\n")[0].substring(0, 15);
                 if (newTitle) {
                     setHistoryList(prev => {
@@ -556,8 +532,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         setAttachedFiles([]);
         setAttachedImages([]);
         setCurrentChatId(`chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-
-
     };
 
     const handleSelectHistory = (id: string) => {
@@ -571,12 +545,9 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             setError(null);
             setAttachedFiles([]);
             setAttachedImages([]);
-
-
         }
     };
 
-    // 現在のファイルパスに関連する履歴を上に持ってくるためのソート
     const sortedHistory = useMemo(() => {
         if (!currentFilePath) return historyList;
         return [...historyList].sort((a, b) => {
@@ -584,7 +555,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             const bRelated = b.relatedFilePath === currentFilePath;
             if (aRelated && !bRelated) return -1;
             if (!aRelated && bRelated) return 1;
-            // どちらも同じ条件なら日付の新しい順にしたい場合はここで Date 比較可能（通常は先頭追加なので順序通り）
             return 0;
         });
     }, [historyList, currentFilePath]);
@@ -593,8 +563,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         setIsLoadingModels(true);
         setError(null);
         try {
-
-            const response = await fetch("/api/models", { cache: "no-store" });
+            const response = await fetch("http://localhost:11434/api/tags", { cache: "no-store" });
 
             if (!response.ok) {
                 const text = await response.text();
@@ -607,14 +576,15 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             }
 
             const data = await response.json();
+            const models = data.models ? data.models.map((m: any) => m.name) : [];
 
-            if (data.models && Array.isArray(data.models) && data.models.length > 0) {
-                setAvailableModels(data.models);
-                const gemma = data.models.find((m: string) => m.includes("gemma3:12b"));
+            if (models.length > 0) {
+                setAvailableModels(models);
+                const gemma = models.find((m: string) => m.includes("gemma3:12b"));
                 if (gemma) {
                     setSelectedModel(gemma);
-                } else if (!selectedModel || !data.models.includes(selectedModel)) {
-                    setSelectedModel(data.models[0]);
+                } else if (!selectedModel || !models.includes(selectedModel)) {
+                    setSelectedModel(models[0]);
                 }
             } else {
                 throw new Error("インストール済みのモデルが見つかりませんでした");
@@ -629,12 +599,10 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
 
     useEffect(() => { fetchModels(); }, []);
 
-    // テキストサイズの変更を localStorage に保存
     useEffect(() => {
         localStorage.setItem('ahme-chat-font-size', String(fontSize));
     }, [fontSize]);
 
-    // 入力欄の高さを自動調整するエフェクト（空文字時はリセットして2行幅を維持）
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
@@ -647,19 +615,17 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         }
     }, [inputValue]);
 
-    // ── 右クリックコンテキストメニュー State ──
     const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; text: string } | null>(null);
 
     const handleContextMenu = useCallback((e: React.MouseEvent) => {
         const sel = window.getSelection();
         const text = sel?.toString()?.trim();
-        if (!text || text.length < 1) return; // テキスト未選択時はデフォルトメニュー
+        if (!text || text.length < 1) return;
         e.preventDefault();
-        e.stopPropagation(); // 親要素への伝播を阻止
+        e.stopPropagation();
         setCtxMenu({ x: e.clientX, y: e.clientY, text });
     }, []);
 
-    // クリックでコンテキストメニューを閉じる
     useEffect(() => {
         if (!ctxMenu) return;
         const close = () => setCtxMenu(null);
@@ -677,12 +643,10 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         }
     }, [messages]);
 
-    // ── ファイル添付処理（画像 / テキスト分岐）──
     const handleFiles = useCallback(async (files: FileList | File[]) => {
         const fileArray = Array.from(files);
 
         for (const file of fileArray) {
-            // ── 画像ファイル: クライアントサイドで Base64 変換 ──
             if (isImageFile(file)) {
                 const id = `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
                 try {
@@ -701,7 +665,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 continue;
             }
 
-            // ── テキスト / PDF ファイル: サーバーサイドパース ──
             const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             const newFile: AttachedFile = {
                 id,
@@ -714,21 +677,13 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             setAttachedFiles(prev => [...prev, newFile]);
 
             try {
-                const formData = new FormData();
-                formData.append("file", file);
+                const data = await (window as any).electronAPI.parseFile((file as any).path);
 
-                const res = await fetch("/api/parse", {
-                    method: "POST",
-                    body: formData,
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
+                if (data.error) {
                     setAttachedFiles(prev =>
                         prev.map(f =>
                             f.id === id
-                                ? { ...f, isParsing: false, error: data.error || "解析失敗" }
+                                ? { ...f, isParsing: false, error: data.error }
                                 : f
                         )
                     );
@@ -767,7 +722,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         setAttachedImages(prev => prev.filter(img => img.id !== id));
     }, []);
 
-    // ── Drag & Drop ハンドラ ──
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -777,7 +731,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     const handleDragLeave = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        // 子要素からのleaveイベントを無視
         const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
         const { clientX, clientY } = e;
         if (
@@ -802,18 +755,14 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         }
     }, [handleFiles]);
 
-    // ── メッセージ送信 ──
     const handleSend = async () => {
         if (!inputValue.trim() || isGenerating) return;
-        // パース中のファイルがある場合は待機
         if (attachedFiles.some(f => f.isParsing)) return;
 
         const userText = inputValue;
         const currentAttachments = attachedFiles.filter(f => !f.error && f.text);
         const currentImages = [...attachedImages];
 
-
-        // ユーザーメッセージに添付情報を表示
         const attachInfo: string[] = [];
         if (currentAttachments.length > 0) attachInfo.push(`📎 ${currentAttachments.map(f => f.name).join(", ")}`);
         if (currentImages.length > 0) attachInfo.push(`🖼️ ${currentImages.map(img => img.name).join(", ")}`);
@@ -838,35 +787,25 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         try {
             const systemPrompt = getEffectivePrompt("BASE");
 
-            // ── Web検索（有効時のみ、3秒タイムアウト） ──
             let searchContext = "";
             if (webSearchEnabled) {
                 setIsSearching(true);
                 try {
-                    const searchRes = await fetch("/api/search", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ query: userText }),
-                    });
-                    const searchData = await searchRes.json();
+                    const searchData = await (window as any).electronAPI.searchTavily(userText);
 
                     if (!searchData.skipped && searchData.results?.length > 0) {
                         const resultsText = searchData.results
                             .map((r: any, i: number) => `${i + 1}. [${r.title}](${r.url})\n${r.content}`)
                             .join("\n\n");
                         searchContext = `\n\n--- Web検索結果 ---\n${searchData.answer ? `要約: ${searchData.answer}\n\n` : ""}${resultsText}\n`;
-
-                    } else {
-
                     }
                 } catch (searchErr: any) {
-
+                    console.error("Search error", searchErr);
                 } finally {
                     setIsSearching(false);
                 }
             }
 
-            // ── 添付ファイルのコンテキスト構築 ──
             let attachmentContext = "";
             if (currentAttachments.length > 0) {
                 attachmentContext = currentAttachments
@@ -875,12 +814,9 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 attachmentContext = `\n\n--- 添付資料 ---\n${attachmentContext}\n`;
             }
 
-            // ── プロンプト構築（画像の有無でストラテジーを変更） ──
             let fullContext: string;
 
             if (currentImages.length > 0) {
-                // 🖼️ 画像あり: 画像分析を最優先、エディタコンテキストは要約程度に抑える
-                // 長文ドキュメントがコンテキストウィンドウを圧迫すると画像が無視されるため
                 const MAX_EDITOR_WITH_IMAGE = 1000;
                 const trimmedEditor = editorContent.length > MAX_EDITOR_WITH_IMAGE
                     ? editorContent.substring(0, MAX_EDITOR_WITH_IMAGE) + "\n...(以下省略)..."
@@ -894,37 +830,27 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     trimmedEditor ? `\n--- エディタ参考情報（要約） ---\n${trimmedEditor}` : "",
                 ].filter(Boolean).join("\n");
             } else {
-                // 📝 テキストのみ: 従来どおりフルコンテキスト
                 fullContext = `以下のドキュメントの内容に基づいて回答してください。${searchContext}${attachmentContext}\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
             }
 
+            const ollamaMessages = [
+                { role: "system", content: systemPrompt },
+                ...messages.map(m => ({ role: m.role, content: m.content })),
+                { role: "user", content: fullContext }
+            ];
 
+            if (currentImages.length > 0) {
+                const cleanBase64 = currentImages.map(img => img.base64.startsWith("data:") ? img.base64.split(",").slice(1).join(",") : img.base64);
+                (ollamaMessages[ollamaMessages.length - 1] as any).images = cleanBase64;
+            }
 
-            const payload: any = {
+            const payload = {
                 model: selectedModel || "llama3",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    ...messages.map(m => ({ role: m.role, content: m.content })),
-                    { role: "user", content: fullContext }
-                ],
+                messages: ollamaMessages,
                 stream: true,
             };
 
-            // 画像がある場合、Base64 配列を payload に追加
-            if (currentImages.length > 0) {
-                // 純粋な Base64 文字列のみを抽出（data: プレフィックスを再度確認・除去）
-                const cleanBase64 = currentImages.map(img => {
-                    let b64 = img.base64;
-                    if (b64.startsWith("data:")) {
-                        b64 = b64.split(",").slice(1).join(",");
-                    }
-                    return b64;
-                });
-                payload.images = cleanBase64;
-
-            }
-
-            const response = await fetch("/api/chat", {
+            const response = await fetch("http://localhost:11434/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -953,8 +879,20 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                const chunk = decoder.decode(value);
-                assistantContent += chunk;
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split("\n").filter(line => line.trim());
+                
+                for (const line of lines) {
+                    try {
+                        const data = JSON.parse(line);
+                        if (data.message?.content) {
+                            assistantContent += data.message.content;
+                        }
+                    } catch (e) {
+                        // 無視
+                    }
+                }
+                
                 setMessages(prev => {
                     const next = [...prev];
                     next[next.length - 1] = { ...next[next.length - 1], content: assistantContent };
@@ -962,24 +900,16 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 });
             }
 
-            // 送信成功後に添付をクリア
             setAttachedFiles([]);
             setAttachedImages([]);
 
-            // ★★★★ ここから追加 ★★★★
-            // AIの返信が完了した時点で、メッセージがちょうど2個（1往復目）ならタイトルを生成する
-            // ※ setMessages は非同期なので、手元にある最新の配列 (newMessages) に今回の回答を足して判定します
             const finalMessages = [...newMessages, { role: "assistant", content: assistantContent }];
             if (finalMessages.length === 2) {
-                // historyList の最新状態をチェックしなくても、「1往復目」という事実だけで生成を決定してOK
                 generateTitleBackground(finalMessages as Message[]);
             }
-            // ★★★★ 追加ここまで ★★★★
 
         } catch (err: any) {
-            if (err.name === "AbortError") {
-
-            } else {
+            if (err.name !== "AbortError") {
                 console.error("Chat Error:", err);
                 setError(err.message || "予期せぬエラーが発生しました。");
             }
@@ -994,7 +924,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             abortControllerRef.current.abort();
         }
 
-        // 履歴からも削除する
         setHistoryList(prev => {
             const newList = prev.filter(h => h.id !== currentChatId);
             saveHistory(newList);
@@ -1012,13 +941,15 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     const successFiles = attachedFiles.filter(f => !f.error && !f.isParsing);
     const totalAttachments = successFiles.length + attachedImages.length;
 
+    // ★ 追加：マウントされるまでは描画しない
+    if (!isMounted) return null;
+
     return (
         <div className="flex flex-col h-full bg-ahme-bg border-l border-ahme-surface-border text-sm overflow-hidden relative">
             {/* 履歴サイドバー */}
             <div className={`absolute top-0 left-0 h-full bg-ahme-surface-secondary border-r border-ahme-surface-border z-50 transition-transform duration-300 w-64 flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="flex items-center justify-between p-3 border-b border-ahme-surface-border">
                     <div className="flex items-center gap-2">
-                        {/* サイドバー側にも三本線ボタンを配置 */}
                         <button
                             onClick={() => setIsSidebarOpen(false)}
                             className="p-1.5 hover:bg-ahme-surface-hover rounded text-ahme-text-muted hover:text-white transition-colors"
@@ -1028,7 +959,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         </button>
                         <span className="font-bold text-ahme-text-primary">チャット履歴</span>
                     </div>
-                    {/* 新規チャットボタン（右寄せ） */}
                     <button onClick={handleNewChat} className="p-1 hover:bg-ahme-surface-hover rounded text-ahme-text-secondary" title="新しいチャット">
                         <span className="text-xl leading-none block">+</span>
                     </button>
@@ -1041,10 +971,13 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             const isRelated = currentFilePath && hist.relatedFilePath === currentFilePath;
                             const isActive = hist.id === currentChatId;
                             return (
-                                <button
+                                // ★ 修正：button の入れ子解消のため div に変更
+                                <div
                                     key={hist.id}
+                                    role="button"
+                                    tabIndex={0}
                                     onClick={() => handleSelectHistory(hist.id)}
-                                    className={`w-full text-left p-2 rounded-md transition-colors text-xs flex items-center justify-between group
+                                    className={`w-full text-left p-2 rounded-md transition-colors text-xs flex items-center justify-between group cursor-pointer
                                         ${isActive ? 'bg-ahme-primary-muted border border-ahme-primary-ring/30 text-ahme-primary-text'
                                             : 'hover:bg-ahme-surface text-ahme-text-muted border border-transparent'}
                                     `}
@@ -1057,7 +990,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                         )}
                                         <div className="flex flex-col min-w-0 flex-1">
                                             <span className="truncate font-medium">{hist.title}</span>
-                                            {/* ★ 追加: 関連ファイル名がある場合はタイトルの下に小さく表示 */}
                                             {hist.relatedFilePath && (
                                                 <span className="truncate text-[9px] text-ahme-text-faint/80 mt-0.5" title={hist.relatedFilePath}>
                                                     📄 {hist.relatedFilePath.split(/[/\\]/).pop()}
@@ -1069,7 +1001,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                         className="opacity-0 group-hover:opacity-100 p-1 hover:text-ahme-error-text transition-opacity"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            // 1件削除処理
                                             setHistoryList(prev => {
                                                 const newList = prev.filter(h => h.id !== hist.id);
                                                 saveHistory(newList);
@@ -1081,7 +1012,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                                     >
                                         <Trash2 size={12} />
                                     </button>
-                                </button>
+                                </div>
                             );
                         })
                     )}
@@ -1091,7 +1022,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             {/* ヘッダー */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-ahme-surface-border bg-ahme-surface/50">
                 <div className="flex items-center gap-3">
-                    {/* メイン側の Menu アイコン */}
                     <button
                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                         className={`p-1.5 rounded transition-colors ${isSidebarOpen ? 'bg-ahme-surface-hover text-white opacity-0 pointer-events-none' : 'text-ahme-text-muted hover:text-white hover:bg-ahme-surface-hover'}`}
@@ -1129,7 +1059,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             <RefreshCw size={16} />
                         </button>
                     </div>
-                    {/* 🌐 Web検索トグル */}
                     <button
                         onClick={() => setWebSearchEnabled(v => !v)}
                         className={`p-1.5 rounded transition-all duration-200 ${webSearchEnabled
@@ -1146,7 +1075,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 </div>
             </div>
 
-            {/* メッセージエリア + テキスト選択挿入ボタン */}
+            {/* メッセージエリア */}
             <div className="flex-1 overflow-hidden relative" onClick={() => isSidebarOpen && setIsSidebarOpen(false)}>
                 <div
                     ref={scrollRef}
@@ -1204,13 +1133,11 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     )}
                 </div>
 
-                {/* 選択時インサートボタン（z-index調整） */}
                 <div className="relative z-10">
                     <SelectionInsertButton containerRef={scrollRef} />
                 </div>
             </div>
 
-            {/* 右クリックコンテキストメニュー (最前面・Fixed配置・ポータル的扱い) */}
             {ctxMenu && (
                 <div
                     className="fixed z-[99999] bg-ahme-surface border border-ahme-surface-border rounded-lg shadow-2xl py-2 min-w-[200px] backdrop-blur-md"
@@ -1249,7 +1176,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 </div>
             )}
 
-            {/* ── 入力エリア（Dropzone 対応）── */}
             <div
                 className={`p-4 border-t transition-all duration-200 ${isDragOver
                     ? "border-ahme-primary-ring bg-ahme-primary-muted shadow-[inset_0_0_20px_rgba(59,130,246,0.1)]"
@@ -1260,7 +1186,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
             >
-                {/* ドラッグオーバーレイ */}
                 {isDragOver && (
                     <div className="mb-3 flex items-center justify-center gap-2 py-4 rounded-lg border-2 border-dashed border-ahme-primary-ring/50 bg-ahme-primary-muted/10 text-ahme-primary-text text-xs font-medium">
                         <Paperclip size={16} />
@@ -1268,7 +1193,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     </div>
                 )}
 
-                {/* 検索中インジケーター */}
                 {isSearching && (
                     <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-ahme-success-muted border border-ahme-success-border text-ahme-success-text text-[11px]">
                         <Loader2 size={12} className="animate-spin" />
@@ -1276,7 +1200,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                     </div>
                 )}
 
-                {/* 添付ファイルチップ + 画像プレビュー */}
                 {(attachedFiles.length > 0 || attachedImages.length > 0) && (
                     <div className="mb-2 flex flex-wrap gap-1.5">
                         {attachedFiles.map(file => (
@@ -1345,7 +1268,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         className="w-full bg-ahme-input border border-ahme-input-border rounded-lg p-3 pr-20 text-ahme-text-primary focus:outline-none focus:ring-1 focus:ring-ahme-input-focus transition-all resize-none min-h-[2.5rem] max-h-[300px] overflow-y-auto disabled:opacity-50"
                     />
                     <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
-                        {/* 📎 ファイル添付ボタン */}
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isGenerating}
@@ -1354,7 +1276,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         >
                             <Paperclip size={16} />
                         </button>
-                        {/* 送信ボタン */}
                         <button
                             onClick={handleSend}
                             disabled={!inputValue.trim() || isGenerating || hasParsing}
@@ -1370,7 +1291,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             )}
                         </button>
                     </div>
-                    {/* 隠しファイル入力 */}
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -1380,7 +1300,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         onChange={(e) => {
                             if (e.target.files) {
                                 handleFiles(e.target.files);
-                                e.target.value = ""; // リセット
+                                e.target.value = "";
                             }
                         }}
                     />
@@ -1402,7 +1322,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 </div>
             </div>
 
-            {/* AI Assistant設定ダイアログ */}
             <AiAssistantDialog
                 isOpen={isAssistantDialogOpen}
                 onClose={() => setIsAssistantDialogOpen(false)}

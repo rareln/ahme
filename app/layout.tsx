@@ -24,6 +24,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* ★ 修正：Monaco Editor の CDN 倉庫 (cdn.jsdelivr.net) を安全リストに追加 */}
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: file: app: http://localhost:* https://cdn.jsdelivr.net; connect-src 'self' ws: wss: http://localhost:* https://api.tavily.com https://cdn.jsdelivr.net; img-src 'self' data: blob: file: app: http://localhost:*; font-src 'self' data: file: app: https://cdn.jsdelivr.net;"
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

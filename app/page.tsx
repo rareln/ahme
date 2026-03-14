@@ -24,7 +24,6 @@ function generateId(): string {
 
 /** 新規タブ作成（連番付き: 無題(1), 無題(2)...） */
 function createNewTab(currentTabs: TabData[]): TabData {
-  // 現在の「無題(n)」から使用されている番号を抽出
   const usedNumbers = currentTabs
     .map((t) => {
       const match = t.title.match(/^無題\((\d+)\)$/);
@@ -32,7 +31,6 @@ function createNewTab(currentTabs: TabData[]): TabData {
     })
     .filter((n): n is number => n !== null);
 
-  // 重複しない最小の正の整数を探す
   let nextNumber = 1;
   while (usedNumbers.includes(nextNumber)) {
     nextNumber++;
@@ -100,9 +98,7 @@ function savePanelLayout(layout: any) {
   } catch { /* ignore */ }
 }
 
-/**
- * ElectronのIPC APIを呼び出す。
- */
+/** ElectronのIPC APIを呼び出す */
 async function openFileDialog() {
   return (window as any).electronAPI.openFile();
 }
@@ -139,6 +135,10 @@ function getLanguageFromPath(filePath: string): string {
 }
 
 export default function Home() {
+  // ★ ハイドレーションエラー対策：マウント状態の管理
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   // --- セッション復元 ---
   const [tabs, setTabs] = useState<TabData[]>(() => {
     if (typeof window === "undefined") return [createNewTab([])];
@@ -164,7 +164,6 @@ export default function Home() {
     return session?.settings ?? DEFAULT_SETTINGS;
   });
 
-  // 初回レンダリング後にactiveTabIdを修正
   useEffect(() => {
     if (!activeTabId || !tabs.some((t) => t.id === activeTabId)) {
       setActiveTabId(tabs[0]?.id ?? "");
@@ -193,22 +192,17 @@ export default function Home() {
   const scrollPositionsRef = useRef(scrollPositions);
   scrollPositionsRef.current = scrollPositions;
 
-  // --- アクティブタブ取得 ---
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
 
   // --- パネル比率の保存・復元 ---
-  // Note: react-resizable-panels uses "groupRef" instead of "ref"
   const panelGroupRef = useRef<any>(null);
   const [layout, setLayout] = useState<any | undefined>(undefined);
-  const [mounted, setMounted] = useState(false);
+  const [panelsMounted, setPanelsMounted] = useState(false);
 
-  // 初回マウント時に localStorage からレイアウトを復元 (SSR回避のため useEffect 内で実行)
   useEffect(() => {
     const saved = loadPanelLayout();
-    if (saved) {
-      setLayout(saved);
-    }
-    setMounted(true);
+    if (saved) setLayout(saved);
+    setPanelsMounted(true);
   }, []);
 
   const handlePanelLayoutChanged = useCallback((layout: any) => {
@@ -254,70 +248,60 @@ export default function Home() {
     });
   }, []);
 
-  const doCloseTab = useCallback(
-    (id: string) => {
-      setTabs((prev) => {
-        if (prev.length <= 1) {
-          const newTab = createNewTab([]);
-          setActiveTabId(newTab.id);
-          return [newTab];
-        }
-        const idx = prev.findIndex((t) => t.id === id);
-        const next = prev.filter((t) => t.id !== id);
-        if (id === activeTabIdRef.current) {
-          const newIdx = Math.min(idx, next.length - 1);
-          setActiveTabId(next[newIdx].id);
-        }
-        return next;
-      });
-      setClosingTabId(null);
-    },
-    []
-  );
-
-  const handleCloseTab = useCallback(
-    (id: string) => {
-      const tab = tabsRef.current.find((t) => t.id === id);
-      if (tab?.isModified) {
-        setClosingTabId(id);
-      } else {
-        doCloseTab(id);
+  const doCloseTab = useCallback((id: string) => {
+    setTabs((prev) => {
+      if (prev.length <= 1) {
+        const newTab = createNewTab([]);
+        setActiveTabId(newTab.id);
+        return [newTab];
       }
-    },
-    [doCloseTab]
-  );
+      const idx = prev.findIndex((t) => t.id === id);
+      const next = prev.filter((t) => t.id !== id);
+      if (id === activeTabIdRef.current) {
+        const newIdx = Math.min(idx, next.length - 1);
+        setActiveTabId(next[newIdx].id);
+      }
+      return next;
+    });
+    setClosingTabId(null);
+  }, []);
 
-  // --- タブの順番入れ替え ---
+  const handleCloseTab = useCallback((id: string) => {
+    const tab = tabsRef.current.find((t) => t.id === id);
+    if (tab?.isModified) {
+      setClosingTabId(id);
+    } else {
+      doCloseTab(id);
+    }
+  }, [doCloseTab]);
+
   const handleReorderTabs = useCallback((newTabs: TabData[]) => {
     setTabs(newTabs);
   }, []);
 
-  const handleContentChange = useCallback(
-    (newContent: string) => {
-      setTabs((prev) =>
-        prev.map((t) => {
-          if (t.id !== activeTabIdRef.current) return t;
+  const handleContentChange = useCallback((newContent: string) => {
+    setTabs((prev) =>
+      prev.map((t) => {
+        if (t.id !== activeTabIdRef.current) return t;
 
-          let newTitle = t.title;
-          const isUntitled = /^無題\(\d+\)$/.test(t.title) || t.title === "無題";
+        let newTitle = t.title;
+        const isUntitled = /^無題\(\d+\)$/.test(t.title) || t.title === "無題";
 
-          if (isUntitled) {
-            if (newContent.trim().length > 0) {
-              const firstLine = newContent.split("\n")[0].trim();
-              if (firstLine.length > 0) {
-                newTitle = firstLine.slice(0, 20);
-              }
+        if (isUntitled) {
+          if (newContent.trim().length > 0) {
+            const firstLine = newContent.split("\n")[0].trim();
+            if (firstLine.length > 0) {
+              newTitle = firstLine.slice(0, 20);
             }
-          } else if (newContent.trim().length === 0 && !t.filePath) {
-            newTitle = "無題";
           }
+        } else if (newContent.trim().length === 0 && !t.filePath) {
+          newTitle = "無題";
+        }
 
-          return { ...t, content: newContent, title: newTitle, isModified: true };
-        })
-      );
-    },
-    []
-  );
+        return { ...t, content: newContent, title: newTitle, isModified: true };
+      })
+    );
+  }, []);
 
   const handleCursorChange = useCallback((line: number, column: number) => {
     setCursorLine(line);
@@ -381,7 +365,6 @@ export default function Home() {
     try {
       const firstLine = tab.content.split("\n")[0].trim();
       const defaultName = (firstLine.length > 0 ? firstLine.slice(0, 20) : "無題") + ".txt";
-      // ファイルのディレクトリがあればそれを初期パスに
       const dirPath = tab.filePath ? tab.filePath.split('/').slice(0, -1).join('/') : undefined;
       const defaultPath = dirPath ? `${dirPath}/${defaultName}` : defaultName;
       const filePath = await saveFileDialog(defaultPath);
@@ -421,8 +404,7 @@ export default function Home() {
 
     const setupListener = (channel: string, handler: (...args: any[]) => void) => {
       if (electronAPI.on) {
-        const unsubscribe = electronAPI.on(channel, handler);
-        return unsubscribe;
+        return electronAPI.on(channel, handler);
       }
       return () => { };
     };
@@ -434,9 +416,7 @@ export default function Home() {
     const unsubSearch = setupListener('menu:search', handleSearch);
     const unsubReplace = setupListener('menu:replace', handleReplace);
 
-    // --- OSからのファイル直接起動 ---
     const handleOpenExternal = (data: { fileName: string, content: string, filePath: string }) => {
-      // tabsRef.current を使用して最新のタブ状態を参照
       const currentTabs = tabsRef.current;
       const existing = currentTabs.find(t => t.filePath === data.filePath);
 
@@ -455,9 +435,7 @@ export default function Home() {
         isModified: false,
       };
 
-      // 関数型アップデートで安全に追加
       setTabs(prev => {
-        // 念のためここでも再チェック（競合防止）
         if (prev.some(t => t.filePath === data.filePath)) return prev;
         return [...prev, newTab];
       });
@@ -466,8 +444,7 @@ export default function Home() {
 
     const unsubExternal = setupListener('open-external-file', handleOpenExternal);
 
-    // リスナー登録完了後に準備完了を通知
-    electronAPI.uiReady();
+    if (electronAPI.uiReady) electronAPI.uiReady();
 
     return () => {
       unsubNew();
@@ -478,7 +455,6 @@ export default function Home() {
       unsubReplace();
       unsubExternal();
     };
-
   }, [handleAddTab, handleOpenFile, handleSave, handleSaveAs, handleSearch, handleReplace]);
 
   // --- ウィンドウタイトルの動的更新 ---
@@ -491,7 +467,7 @@ export default function Home() {
     }
   }, [tabs, activeTabId]);
 
-  // --- テーマを <body> タグに反映させる処理 ---
+  // --- テーマ反映 ---
   useEffect(() => {
     document.body.classList.remove("theme-violet", "theme-dark", "theme-light", "theme-hc", "theme-aurora", "theme-ember", "theme-sakura");
 
@@ -525,10 +501,12 @@ export default function Home() {
     setClosingTabId(null);
   }, []);
 
+  // ★ 追加：マウントされるまでは何も描画しない（ハイドレーションエラー防止）
+  if (!isMounted) return null;
+
   return (
     <EditorProvider>
       <div className="flex flex-col h-screen bg-ahme-bg text-white">
-        {/* メニューバー */}
         <Header
           onOpenFile={handleOpenFile}
           onSave={() => handleSave()}
@@ -542,7 +520,6 @@ export default function Home() {
           onToggleAi={() => setAiEnabled(!aiEnabled)}
         />
 
-        {/* タブバー */}
         <TabBar
           tabs={tabs}
           activeTabId={activeTabId}
@@ -552,9 +529,8 @@ export default function Home() {
           onReorderTabs={handleReorderTabs}
         />
 
-        {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}
         <main className="flex-1 overflow-hidden relative">
-          {!mounted ? null : (
+          {!panelsMounted ? null : (
             <PanelGroup
               groupRef={panelGroupRef}
               defaultLayout={layout}
@@ -562,7 +538,7 @@ export default function Home() {
               id="main-layout"
               onLayoutChanged={handlePanelLayoutChanged}
             >
-              <Panel defaultSize="65" minSize="20" id="editor-panel">
+              <Panel defaultSize={65} minSize={20} id="editor-panel">
                 <div className="h-full w-full">
                   {activeTab && (
                     <MemoEditor
@@ -591,7 +567,7 @@ export default function Home() {
                   >
                     <div className="h-8 w-px bg-ahme-resizer-handle" />
                   </PanelResizeHandle>
-                  <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
+                  <Panel defaultSize={35} minSize={15} maxSize={80} id="ai-panel">
                     <AiPanel
                       editorContent={activeTab?.content || ""}
                       currentFilePath={activeTab?.filePath || null}
@@ -603,14 +579,12 @@ export default function Home() {
           )}
         </main>
 
-        {/* ステータスバー */}
         <StatusBar
           line={cursorLine}
           column={cursorColumn}
           language={activeTab?.language ?? "text"}
         />
 
-        {/* 設定ダイアログ */}
         <SettingsDialog
           isOpen={settingsOpen}
           settings={settings}
@@ -618,7 +592,6 @@ export default function Home() {
           onSave={setSettings}
         />
 
-        {/* 未保存確認ダイアログ */}
         <SaveConfirmDialog
           isOpen={closingTabId !== null}
           fileName={tabs.find((t) => t.id === closingTabId)?.title ?? ""}
@@ -627,7 +600,6 @@ export default function Home() {
           onCancel={handleConfirmCancel}
         />
 
-        {/* ダウンロード進捗フローティングウィジェット */}
         <DownloadProgressWidget />
       </div>
     </EditorProvider>
