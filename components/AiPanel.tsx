@@ -392,14 +392,12 @@ function AttachmentChip({
 }
 
 export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps) {
-    // ★ 追加：マウント状態の管理（ハイドレーション対策）
     const [isMounted, setIsMounted] = useState(false);
     useEffect(() => { setIsMounted(true); }, []);
 
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
     
-    // ★ 修正：フォントサイズの初期化を遅延させる（ハイドレーション対策）
     const [fontSize, setFontSize] = useState(14);
     useEffect(() => {
         const saved = localStorage.getItem('ahme-chat-font-size');
@@ -490,7 +488,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             const textToSummarize = chatMessages.map(m => `${m.role}: ${m.content}`).join("\n");
             const prompt = "以下の会話を15文字以内で要約してタイトルを付けてください。タイトルのみ出力してください。バッククォートなどの装飾は不要です。:\n\n" + textToSummarize;
 
-            const res = await fetch("http://localhost:11434/api/chat", {
+            const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -563,7 +561,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
         setIsLoadingModels(true);
         setError(null);
         try {
-            const response = await fetch("http://localhost:11434/api/tags", { cache: "no-store" });
+            const response = await fetch("/api/models", { cache: "no-store" });
 
             if (!response.ok) {
                 const text = await response.text();
@@ -576,15 +574,14 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             }
 
             const data = await response.json();
-            const models = data.models ? data.models.map((m: any) => m.name) : [];
 
-            if (models.length > 0) {
-                setAvailableModels(models);
-                const gemma = models.find((m: string) => m.includes("gemma3:12b"));
+            if (data.models && Array.isArray(data.models) && data.models.length > 0) {
+                setAvailableModels(data.models);
+                const gemma = data.models.find((m: string) => m.includes("gemma3:12b"));
                 if (gemma) {
                     setSelectedModel(gemma);
-                } else if (!selectedModel || !models.includes(selectedModel)) {
-                    setSelectedModel(models[0]);
+                } else if (!selectedModel || !data.models.includes(selectedModel)) {
+                    setSelectedModel(data.models[0]);
                 }
             } else {
                 throw new Error("インストール済みのモデルが見つかりませんでした");
@@ -677,13 +674,21 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             setAttachedFiles(prev => [...prev, newFile]);
 
             try {
-                const data = await (window as any).electronAPI.parseFile((file as any).path);
+                const formData = new FormData();
+                formData.append("file", file);
 
-                if (data.error) {
+                const res = await fetch("/api/parse", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
                     setAttachedFiles(prev =>
                         prev.map(f =>
                             f.id === id
-                                ? { ...f, isParsing: false, error: data.error }
+                                ? { ...f, isParsing: false, error: data.error || "解析失敗" }
                                 : f
                         )
                     );
@@ -791,7 +796,12 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             if (webSearchEnabled) {
                 setIsSearching(true);
                 try {
-                    const searchData = await (window as any).electronAPI.searchTavily(userText);
+                    const searchRes = await fetch("/api/search", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ query: userText }),
+                    });
+                    const searchData = await searchRes.json();
 
                     if (!searchData.skipped && searchData.results?.length > 0) {
                         const resultsText = searchData.results
@@ -800,7 +810,7 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                         searchContext = `\n\n--- Web検索結果 ---\n${searchData.answer ? `要約: ${searchData.answer}\n\n` : ""}${resultsText}\n`;
                     }
                 } catch (searchErr: any) {
-                    console.error("Search error", searchErr);
+                    
                 } finally {
                     setIsSearching(false);
                 }
@@ -833,24 +843,28 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                 fullContext = `以下のドキュメントの内容に基づいて回答してください。${searchContext}${attachmentContext}\n\n--- Context ---\n${editorContent}\n\n--- User Question ---\n${userText}`;
             }
 
-            const ollamaMessages = [
-                { role: "system", content: systemPrompt },
-                ...messages.map(m => ({ role: m.role, content: m.content })),
-                { role: "user", content: fullContext }
-            ];
-
-            if (currentImages.length > 0) {
-                const cleanBase64 = currentImages.map(img => img.base64.startsWith("data:") ? img.base64.split(",").slice(1).join(",") : img.base64);
-                (ollamaMessages[ollamaMessages.length - 1] as any).images = cleanBase64;
-            }
-
-            const payload = {
+            const payload: any = {
                 model: selectedModel || "llama3",
-                messages: ollamaMessages,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    ...messages.map(m => ({ role: m.role, content: m.content })),
+                    { role: "user", content: fullContext }
+                ],
                 stream: true,
             };
 
-            const response = await fetch("http://localhost:11434/api/chat", {
+            if (currentImages.length > 0) {
+                const cleanBase64 = currentImages.map(img => {
+                    let b64 = img.base64;
+                    if (b64.startsWith("data:")) {
+                        b64 = b64.split(",").slice(1).join(",");
+                    }
+                    return b64;
+                });
+                payload.images = cleanBase64;
+            }
+
+            const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -879,19 +893,8 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                const chunk = decoder.decode(value, { stream: true });
-                const lines = chunk.split("\n").filter(line => line.trim());
-                
-                for (const line of lines) {
-                    try {
-                        const data = JSON.parse(line);
-                        if (data.message?.content) {
-                            assistantContent += data.message.content;
-                        }
-                    } catch (e) {
-                        // 無視
-                    }
-                }
+                const chunk = decoder.decode(value);
+                assistantContent += chunk;
                 
                 setMessages(prev => {
                     const next = [...prev];
@@ -941,7 +944,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
     const successFiles = attachedFiles.filter(f => !f.error && !f.isParsing);
     const totalAttachments = successFiles.length + attachedImages.length;
 
-    // ★ 追加：マウントされるまでは描画しない
     if (!isMounted) return null;
 
     return (
@@ -971,7 +973,6 @@ export default function AiPanel({ editorContent, currentFilePath }: AiPanelProps
                             const isRelated = currentFilePath && hist.relatedFilePath === currentFilePath;
                             const isActive = hist.id === currentChatId;
                             return (
-                                // ★ 修正：button の入れ子解消のため div に変更
                                 <div
                                     key={hist.id}
                                     role="button"

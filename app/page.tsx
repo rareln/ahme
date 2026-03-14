@@ -529,33 +529,41 @@ export default function Home() {
           onReorderTabs={handleReorderTabs}
         />
 
+        {/* メインコンテンツ: エディタ + AIパネル (2ペイン) */}
         <main className="flex-1 overflow-hidden relative">
           {!panelsMounted ? null : (
             <PanelGroup
               groupRef={panelGroupRef}
-              defaultLayout={layout}
+              // ★ TSエラーを回避し、下の「65」と「35」を強制的に読み込ませる
+              defaultLayout={undefined}
+              // ★ ライブラリの正しい指定に戻す
               orientation="horizontal"
               id="main-layout"
               onLayoutChanged={handlePanelLayoutChanged}
+              // ★ AIのON/OFF時に骨組みごと再構築する
+              key={aiEnabled ? "ai-on" : "ai-off"}
             >
-              <Panel defaultSize={65} minSize={20} id="editor-panel">
-                <div className="h-full w-full">
-                  {activeTab && (
-                    <MemoEditor
-                      key={activeTab.id}
-                      defaultValue={activeTab.content}
-                      language={activeTab.language}
-                      settings={settings}
-                      onChange={handleContentChange}
-                      onCursorChange={handleCursorChange}
-                      showSearch={searchTrigger}
-                      showReplace={replaceTrigger}
-                      initialScrollTop={scrollPositions[activeTab.id] ?? 0}
-                      onScrollSave={(scrollTop) => {
-                        setScrollPositions(prev => ({ ...prev, [activeTab.id]: scrollTop }));
-                      }}
-                    />
-                  )}
+              {/* ★ ライブラリが計算不能にならないよう、サイズを「文字列」に戻す */}
+              <Panel defaultSize="65" minSize="20" id="editor-panel">
+                <div className="relative w-full h-full min-w-0 overflow-hidden">
+                  <div className="absolute inset-0">
+                    {activeTab && (
+                      <MemoEditor
+                        key={activeTab.id}
+                        defaultValue={activeTab.content}
+                        language={activeTab.language}
+                        settings={settings}
+                        onChange={handleContentChange}
+                        onCursorChange={handleCursorChange}
+                        showSearch={searchTrigger}
+                        showReplace={replaceTrigger}
+                        initialScrollTop={scrollPositions[activeTab.id] ?? 0}
+                        onScrollSave={(scrollTop) => {
+                          setScrollPositions(prev => ({ ...prev, [activeTab.id]: scrollTop }));
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </Panel>
 
@@ -563,15 +571,20 @@ export default function Home() {
                 <>
                   <PanelResizeHandle
                     id="main-resizer"
-                    className="w-1.5 bg-ahme-resizer hover:bg-ahme-resizer-hover transition-colors cursor-col-resize flex items-center justify-center"
+                    className="w-1.5 bg-ahme-resizer hover:bg-ahme-resizer-hover transition-colors cursor-col-resize flex items-center justify-center relative z-10"
                   >
                     <div className="h-8 w-px bg-ahme-resizer-handle" />
                   </PanelResizeHandle>
-                  <Panel defaultSize={35} minSize={15} maxSize={80} id="ai-panel">
-                    <AiPanel
-                      editorContent={activeTab?.content || ""}
-                      currentFilePath={activeTab?.filePath || null}
-                    />
+                  {/* ★ こちらもサイズを「文字列」に戻す */}
+                  <Panel defaultSize="35" minSize="15" maxSize="80" id="ai-panel">
+                    <div className="relative w-full h-full min-w-0 overflow-hidden">
+                      <div className="absolute inset-0">
+                        <AiPanel
+                          editorContent={activeTab?.content || ""}
+                          currentFilePath={activeTab?.filePath || null}
+                        />
+                      </div>
+                    </div>
                   </Panel>
                 </>
               )}

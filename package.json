@@ -1,7 +1,8 @@
 {
   "name": "ahme",
   "version": "0.1.0",
-  "private": true,
+  "author": "raregroove <raregroovewjaz@gmail.com>", 
+  "description": "",
   "main": "main.js",
   "scripts": {
     "dev": "next dev -p 3002",
