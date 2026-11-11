@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     uiReady: () => ipcRenderer.send('ui-ready'),
     loadChatHistory: () => ipcRenderer.invoke('chat:loadHistory'),
     saveChatHistory: (history) => ipcRenderer.invoke('chat:saveHistory', history),
+    exportPdf: (data) => ipcRenderer.invoke('export-pdf', data),
     on: (channel, callback) => {
         const subscription = (event, ...args) => callback(...args);
         ipcRenderer.on(channel, subscription);

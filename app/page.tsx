@@ -115,6 +115,10 @@ async function writeTextFile(path: string, content: string) {
   return (window as any).electronAPI.writeFile(path, content);
 }
 
+async function exportPdfFile(data: { markdown: string; title?: string; defaultPath?: string }) {
+  return (window as any).electronAPI.exportPdf(data);
+}
+
 /** ファイルパスからファイル名を取得 */
 function getFileName(filePath: string): string {
   return filePath.split("/").pop() ?? filePath;
@@ -182,6 +186,7 @@ export default function Home() {
   const [searchTrigger, setSearchTrigger] = useState(0);
   const [replaceTrigger, setReplaceTrigger] = useState(0);
   const [closingTabId, setClosingTabId] = useState<string | null>(null);
+  const [pdfNotice, setPdfNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // --- スクロール位置の管理 ---
   const [scrollPositions, setScrollPositions] = useState<Record<string, number>>(() => {
@@ -388,6 +393,54 @@ export default function Home() {
     }
   }, []);
 
+  const handleExportPdf = useCallback(async () => {
+    const id = activeTabIdRef.current;
+    const tab = tabsRef.current.find((t) => t.id === id);
+    if (!tab) return;
+
+    try {
+      const firstLine = tab.content.split("\n")[0].replace(/^#+\s*/, "").trim();
+      const baseName = tab.filePath
+        ? getFileName(tab.filePath).replace(/\.(md|txt|markdown)$/i, "")
+        : firstLine.length > 0
+          ? firstLine.slice(0, 20)
+          : tab.title || "無題";
+      const defaultName = `${baseName}.pdf`;
+      const dirPath = tab.filePath ? tab.filePath.split("/").slice(0, -1).join("/") : undefined;
+      const defaultPath = dirPath ? `${dirPath}/${defaultName}` : defaultName;
+
+      const result = await exportPdfFile({
+        markdown: tab.content,
+        title: baseName,
+        defaultPath,
+      });
+
+      if (!result || result.canceled) return;
+
+      if (result.success) {
+        const savedName = result.filePath ? getFileName(result.filePath) : defaultName;
+        setPdfNotice({
+          type: "success",
+          message: `PDFをエクスポートしました: ${savedName}`,
+        });
+        setTimeout(() => setPdfNotice(null), 4000);
+      } else {
+        setPdfNotice({
+          type: "error",
+          message: `PDF出力エラー: ${result.error || "不明なエラー"}`,
+        });
+        setTimeout(() => setPdfNotice(null), 5000);
+      }
+    } catch (e: any) {
+      console.error("PDFエクスポートエラー:", e);
+      setPdfNotice({
+        type: "error",
+        message: `PDF出力エラー: ${e?.message || "不明なエラー"}`,
+      });
+      setTimeout(() => setPdfNotice(null), 5000);
+    }
+  }, []);
+
   const handleSearch = useCallback(() => {
     setSearchTrigger((p) => p + 1);
   }, []);
@@ -413,6 +466,7 @@ export default function Home() {
     const unsubOpen = setupListener('menu:open-file', handleOpenFile);
     const unsubSave = setupListener('menu:save-file', () => handleSave());
     const unsubSaveAs = setupListener('menu:save-as-file', () => handleSaveAs());
+    const unsubExportPdf = setupListener('menu:export-pdf', handleExportPdf);
     const unsubSearch = setupListener('menu:search', handleSearch);
     const unsubReplace = setupListener('menu:replace', handleReplace);
 
@@ -451,11 +505,12 @@ export default function Home() {
       unsubOpen();
       unsubSave();
       unsubSaveAs();
+      unsubExportPdf();
       unsubSearch();
       unsubReplace();
       unsubExternal();
     };
-  }, [handleAddTab, handleOpenFile, handleSave, handleSaveAs, handleSearch, handleReplace]);
+  }, [handleAddTab, handleOpenFile, handleSave, handleSaveAs, handleExportPdf, handleSearch, handleReplace]);
 
   // --- ウィンドウタイトルの動的更新 ---
   useEffect(() => {
@@ -511,6 +566,7 @@ export default function Home() {
           onOpenFile={handleOpenFile}
           onSave={() => handleSave()}
           onSaveAs={() => handleSaveAs()}
+          onExportPdf={handleExportPdf}
           onSearch={handleSearch}
           onReplace={handleReplace}
           onSettings={() => setSettingsOpen(true)}
@@ -614,6 +670,26 @@ export default function Home() {
         />
 
         <DownloadProgressWidget />
+
+        {pdfNotice && (
+          <div
+            className={`fixed bottom-8 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-lg shadow-lg border text-sm font-medium transition-all ${
+              pdfNotice.type === "success"
+                ? "bg-ahme-surface border-ahme-confirm-border text-ahme-confirm-text"
+                : "bg-ahme-surface border-red-500/60 text-red-300"
+            }`}
+          >
+            <span>{pdfNotice.type === "success" ? "✅" : "⚠️"}</span>
+            <span>{pdfNotice.message}</span>
+            <button
+              onClick={() => setPdfNotice(null)}
+              className="ml-2 text-ahme-text-faint hover:text-white text-xs"
+              title="閉じる"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
     </EditorProvider>
   );

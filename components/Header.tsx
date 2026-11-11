@@ -8,6 +8,7 @@ interface HeaderProps {
   onOpenFile: () => void;
   onSave: () => void;
   onSaveAs: () => void;
+  onExportPdf?: () => void;
   onSearch: () => void;
   onReplace: () => void;
   onSettings: () => void;
@@ -22,6 +23,7 @@ export default function Header({
   onOpenFile,
   onSave,
   onSaveAs,
+  onExportPdf,
   onSearch,
   onReplace,
   onSettings,
@@ -60,6 +62,9 @@ export default function Header({
         <MenuButton icon="📂" label="開く" onClick={onOpenFile} />
         <MenuButton icon="💾" label="保存" onClick={onSave} />
         <MenuButton icon="📝" label="別名保存" onClick={onSaveAs} />
+        {onExportPdf && (
+          <MenuButton icon="📄" label="PDF出力" onClick={onExportPdf} />
+        )}
         <div className="w-px h-6 bg-ahme-divider mx-1" />
         
         {/* ★ 追加: 検索の左側に 元に戻す / やり直し ボタンを配置 */}
